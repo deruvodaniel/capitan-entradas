@@ -19,6 +19,11 @@ export default async function HomePage() {
     <main className="flex-1">
       <header className="border-b border-card-border">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
+          <img
+            src="/logo.png"
+            alt="CAPITAN"
+            className="h-16 mx-auto mb-2"
+          />
           <h1 className="text-4xl font-bold tracking-wider">CAPITAN</h1>
           <p className="text-muted mt-2">🎸 Rock en vivo</p>
         </div>

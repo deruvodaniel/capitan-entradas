@@ -32,7 +32,8 @@ export default async function AdminLayout({
       <header className="border-b border-card-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/admin/shows" className="font-bold tracking-wider">
+            <Link href="/admin/shows" className="flex items-center gap-2 font-bold tracking-wider">
+              <img src="/logo.png" alt="" className="h-6" />
               CAPITAN <span className="text-accent text-sm font-normal">admin</span>
             </Link>
             <nav className="flex items-center gap-4 text-sm">

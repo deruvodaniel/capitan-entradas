@@ -32,6 +32,11 @@ export default async function TicketPage({
         <div className="bg-card border border-card-border rounded-2xl overflow-hidden">
           {/* Header */}
           <div className="bg-accent px-6 py-4 text-center">
+            <img
+              src="/logo.png"
+              alt="CAPITAN"
+              className="h-10 mx-auto mb-1"
+            />
             <h1 className="text-xl font-bold text-white tracking-wider">
               CAPITAN
             </h1>
