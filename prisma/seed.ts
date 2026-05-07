@@ -1,8 +1,19 @@
+import "dotenv/config";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+function stripSslMode(url: string) {
+  const u = new URL(url);
+  u.searchParams.delete("sslmode");
+  return u.toString();
+}
+
+const connStr = process.env.DIRECT_URL || process.env.DATABASE_URL!;
+const pool = new Pool({
+  connectionString: stripSslMode(connStr),
+  ssl: { rejectUnauthorized: false },
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
