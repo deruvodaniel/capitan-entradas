@@ -52,8 +52,6 @@ export async function POST(req: NextRequest) {
     });
 
     const baseUrl = getBaseUrl();
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
     const preference = await createPreference({
       items: [
         {
@@ -74,8 +72,6 @@ export async function POST(req: NextRequest) {
       },
       auto_return: "approved",
       statement_descriptor: "CAPITAN",
-      expires: true,
-      expiration_date_to: expiresAt,
     });
 
     await prisma.order.update({

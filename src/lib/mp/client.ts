@@ -47,8 +47,8 @@ export interface MpPreferenceRequest {
   };
   auto_return: "approved" | "all";
   statement_descriptor: string;
-  expires: boolean;
-  expiration_date_to: string;
+  expires?: boolean;
+  expiration_date_to?: string;
 }
 
 export interface MpPreferenceResponse {
