@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/db";
 import { createPreference } from "@/lib/mp/client";
-import { getBaseUrl } from "@/lib/utils";
+
 
 const checkoutSchema = z.object({
   showId: z.string(),
@@ -51,8 +51,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const baseUrl = getBaseUrl();
-    console.log("Checkout baseUrl:", baseUrl, "| APP_URL:", process.env.APP_URL, "| NEXT_PUBLIC:", process.env.NEXT_PUBLIC_APP_URL, "| VERCEL_URL:", process.env.VERCEL_URL);
+    // Derive base URL from the incoming request for reliability
+    const requestUrl = new URL(req.url);
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
     const preference = await createPreference({
       items: [
         {
