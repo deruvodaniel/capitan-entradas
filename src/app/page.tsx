@@ -22,10 +22,9 @@ export default async function HomePage() {
           <img
             src="/logo.png"
             alt="CAPITAN"
-            className="h-16 mx-auto mb-2"
+            className="h-20 mx-auto mb-1"
           />
-          <h1 className="text-4xl font-bold tracking-wider">CAPITAN</h1>
-          <p className="text-muted mt-2">🎸 Rock en vivo</p>
+          <p className="text-muted mt-1">🎸 Rock en vivo</p>
         </div>
       </header>
 

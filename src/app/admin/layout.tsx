@@ -32,9 +32,8 @@ export default async function AdminLayout({
       <header className="border-b border-card-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo — hide text on mobile */}
-          <Link href="/admin/shows" className="flex items-center gap-2 font-bold tracking-wider shrink-0">
-            <img src="/logo.png" alt="" className="h-6" />
-            <span className="hidden sm:inline">CAPITAN</span>
+          <Link href="/admin/shows" className="flex items-center gap-2 shrink-0">
+            <img src="/logo.png" alt="CAPITAN" className="h-7" />
             <span className="text-accent text-sm font-normal">admin</span>
           </Link>
 

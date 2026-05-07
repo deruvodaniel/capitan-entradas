@@ -35,11 +35,8 @@ export default async function TicketPage({
             <img
               src="/logo.png"
               alt="CAPITAN"
-              className="h-10 mx-auto mb-1"
+              className="h-12 mx-auto mb-1"
             />
-            <h1 className="text-xl font-bold text-white tracking-wider">
-              CAPITAN
-            </h1>
             <p className="text-white/80 text-sm">Entrada digital</p>
           </div>
 
