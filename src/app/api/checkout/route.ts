@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     });
 
     const baseUrl = getBaseUrl();
+    console.log("Checkout baseUrl:", baseUrl, "| APP_URL:", process.env.APP_URL, "| NEXT_PUBLIC:", process.env.NEXT_PUBLIC_APP_URL, "| VERCEL_URL:", process.env.VERCEL_URL);
     const preference = await createPreference({
       items: [
         {
