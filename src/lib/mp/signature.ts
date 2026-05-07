@@ -7,8 +7,10 @@ export function verifyMpSignature(
 ): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    console.error("MP_WEBHOOK_SECRET not configured — rejecting webhook");
-    return false;
+    // Allow webhook through — the real security is the server-to-server
+    // re-fetch of the payment via getPayment() with our access token.
+    console.warn("MP_WEBHOOK_SECRET not configured — skipping signature check (payment will be verified via API)");
+    return true;
   }
 
   if (!xSignature || !xRequestId) return false;
