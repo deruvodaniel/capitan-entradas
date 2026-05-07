@@ -79,9 +79,7 @@ export async function POST(req: NextRequest) {
       data: { mpPreferenceId: preference.id },
     });
 
-    // Use sandbox_init_point for test credentials, init_point for production
-    const initPoint = preference.sandbox_init_point || preference.init_point;
-    return NextResponse.json({ initPoint });
+    return NextResponse.json({ initPoint: preference.init_point });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Datos inválidos", details: error.issues }, { status: 400 });
