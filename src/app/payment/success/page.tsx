@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { CheckCircle } from "lucide-react";
+import { formatArs } from "@/lib/utils";
+import TicketReveal from "@/components/TicketReveal";
 
 export default async function PaymentSuccessPage({
   searchParams,
@@ -9,44 +11,64 @@ export default async function PaymentSuccessPage({
 }) {
   const { order: orderId } = await searchParams;
 
-  let tickets: { code: string }[] = [];
+  let orderData: {
+    buyerName: string;
+    quantity: number;
+    totalArs: number;
+    show: { title: string };
+    tier: { name: string };
+  } | null = null;
 
   if (orderId) {
-    const order = await prisma.order.findUnique({
+    orderData = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { tickets: { select: { code: true } } },
+      select: {
+        buyerName: true,
+        quantity: true,
+        totalArs: true,
+        show: { select: { title: true } },
+        tier: { select: { name: true } },
+      },
     });
-    if (order?.status === "PAID") {
-      tickets = order.tickets;
-    }
   }
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center py-16">
-        <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
-        <h1 className="text-2xl font-bold mb-2">¡Pago exitoso!</h1>
-        <p className="text-muted mb-6">
-          Tu entrada fue generada. Revisá tu email para ver el QR.
-        </p>
+    <main className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="max-w-sm w-full">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <CheckCircle className="w-14 h-14 mx-auto text-green-500 mb-3" />
+          <h1 className="text-2xl font-bold">Pago exitoso</h1>
+          {orderData && (
+            <div className="mt-3 text-sm text-muted space-y-0.5">
+              <p className="font-medium text-foreground">
+                {orderData.show.title}
+              </p>
+              <p>
+                {orderData.tier.name} x {orderData.quantity} —{" "}
+                {formatArs(orderData.totalArs)}
+              </p>
+            </div>
+          )}
+        </div>
 
-        {tickets.length > 0 && (
-          <div className="space-y-2 mb-6">
-            {tickets.map((t) => (
-              <Link
-                key={t.code}
-                href={`/ticket/${t.code}`}
-                className="block bg-accent text-white font-medium py-3 px-6 rounded-lg hover:bg-accent-hover transition-colors"
-              >
-                🎫 Ver entrada {t.code}
-              </Link>
-            ))}
-          </div>
+        {/* QR Tickets */}
+        {orderId ? (
+          <TicketReveal orderId={orderId} />
+        ) : (
+          <p className="text-muted text-center text-sm">
+            Vas a recibir tu entrada por email.
+          </p>
         )}
 
-        <Link href="/" className="text-sm text-muted hover:text-foreground">
-          Volver al inicio
-        </Link>
+        <div className="text-center mt-6">
+          <Link
+            href="/"
+            className="text-sm text-muted hover:text-foreground"
+          >
+            Volver al inicio
+          </Link>
+        </div>
       </div>
     </main>
   );
