@@ -214,33 +214,42 @@ async function handleApproved(
     ...tickets.map((t) => prisma.ticket.create({ data: t })),
   ]);
 
-  // Send email (non-blocking for webhook response)
+  // Send email + append to Google Sheets (must await in serverless)
   const baseUrl = getBaseUrl();
   const ticketUrls = tickets.map((t) => `${baseUrl}/ticket/${t.code}`);
 
-  sendTicketEmail({
-    to: order.buyerEmail,
-    buyerName: order.buyerName,
-    showTitle: order.show.title,
-    showDate: formatDate(order.show.startsAt),
-    venue: order.show.venue,
-    tierName: order.tier.name,
-    quantity: order.quantity,
-    ticketUrls,
-  }).catch((e) => console.error("Email send failed:", e));
+  try {
+    await sendTicketEmail({
+      to: order.buyerEmail,
+      buyerName: order.buyerName,
+      showTitle: order.show.title,
+      showDate: formatDate(order.show.startsAt),
+      venue: order.show.venue,
+      tierName: order.tier.name,
+      quantity: order.quantity,
+      ticketUrls,
+    });
+    console.log("Email sent to", order.buyerEmail);
+  } catch (e) {
+    console.error("Email send failed:", e);
+  }
 
-  // Append to Google Sheets (non-blocking)
-  appendSaleToSheet({
-    timestamp: new Date().toISOString(),
-    orderId: order.id,
-    paymentId: dataId,
-    showTitle: order.show.title,
-    showDate: order.show.startsAt.toISOString(),
-    tier: order.tier.name,
-    quantity: order.quantity,
-    totalArs: order.totalArs,
-    buyerName: order.buyerName,
-    buyerEmail: order.buyerEmail,
-    buyerDni: order.buyerDni || "",
-  }).catch((e) => console.error("Sheets append failed:", e));
+  try {
+    await appendSaleToSheet({
+      timestamp: new Date().toISOString(),
+      orderId: order.id,
+      paymentId: dataId,
+      showTitle: order.show.title,
+      showDate: order.show.startsAt.toISOString(),
+      tier: order.tier.name,
+      quantity: order.quantity,
+      totalArs: order.totalArs,
+      buyerName: order.buyerName,
+      buyerEmail: order.buyerEmail,
+      buyerDni: order.buyerDni || "",
+    });
+    console.log("Sheet row appended for order", order.id);
+  } catch (e) {
+    console.error("Sheets append failed:", e);
+  }
 }

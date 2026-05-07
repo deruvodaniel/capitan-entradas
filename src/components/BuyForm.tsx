@@ -29,11 +29,17 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
   const remaining = selectedTier
     ? selectedTier.capacity - selectedTier.soldCount
     : 0;
-  const total = selectedTier ? selectedTier.priceArs * quantity : 0;
 
-  // Check for promo: 2x15000 — if tier is "Anticipada" and qty >= 2, apply promo
+  // Detect "pack" tiers: name contains "2x" → force quantity=2
+  const packMatch = selectedTier?.name.match(/(\d+)\s*x/i);
+  const packSize = packMatch ? parseInt(packMatch[1]) : 0;
+  const isPackTier = packSize >= 2;
+  const effectiveQuantity = isPackTier ? packSize : quantity;
+  const total = selectedTier ? selectedTier.priceArs * effectiveQuantity : 0;
+
+  // Hint: if there's a promo tier and user is buying 2+ of a non-promo tier
   const promoTier = tiers.find(
-    (t) => t.name.toLowerCase().includes("promo")
+    (t) => t.name.toLowerCase().includes("promo") || t.name.match(/\d+\s*x/i)
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -48,7 +54,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
         body: JSON.stringify({
           showId,
           tierId: selectedTierId,
-          quantity,
+          quantity: effectiveQuantity,
           buyerName: name,
           buyerEmail: email,
           buyerDni: dni || undefined,
@@ -119,25 +125,31 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
       {/* Quantity */}
       <div>
         <label className="text-sm font-medium text-muted">Cantidad</label>
-        <div className="flex items-center gap-3 mt-1">
-          <button
-            type="button"
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
-          >
-            -
-          </button>
-          <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-          <button
-            type="button"
-            onClick={() =>
-              setQuantity(Math.min(10, remaining, quantity + 1))
-            }
-            className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
-          >
-            +
-          </button>
-        </div>
+        {isPackTier ? (
+          <p className="mt-1 text-sm text-accent font-medium">
+            🎟️ Pack de {packSize} entradas
+          </p>
+        ) : (
+          <div className="flex items-center gap-3 mt-1">
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
+            >
+              -
+            </button>
+            <span className="text-xl font-bold w-8 text-center">{quantity}</span>
+            <button
+              type="button"
+              onClick={() =>
+                setQuantity(Math.min(10, remaining, quantity + 1))
+              }
+              className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Buyer info */}
@@ -177,7 +189,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
       </div>
 
       {/* Total + promo hint */}
-      {promoTier && selectedTierId !== promoTier.id && quantity >= 2 && (
+      {promoTier && selectedTierId !== promoTier.id && !isPackTier && quantity >= 2 && (
         <div className="bg-accent/10 border border-accent/30 rounded-lg p-3 text-sm">
           💡 Tip: Elegí <strong>{promoTier.name}</strong> para{" "}
           {formatArs(promoTier.priceArs)} por entrada
