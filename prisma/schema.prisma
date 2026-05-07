@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Show {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  venue         String
+  address       String?
+  startsAt      DateTime
+  doorsAt       DateTime?
+  description   String?
+  coverImageUrl String?
+  isPublished   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tiers         TicketTier[]
+  orders        Order[]
+}
+
+model TicketTier {
+  id        String  @id @default(cuid())
+  showId    String
+  show      Show    @relation(fields: [showId], references: [id], onDelete: Cascade)
+  name      String
+  priceArs  Int
+  capacity  Int
+  soldCount Int     @default(0)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+  orders    Order[]
+
+  @@index([showId])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  showId         String
+  tierId         String
+  show           Show        @relation(fields: [showId], references: [id])
+  tier           TicketTier  @relation(fields: [tierId], references: [id])
+  buyerName      String
+  buyerEmail     String
+  buyerDni       String?
+  quantity       Int
+  unitPriceArs   Int
+  totalArs       Int
+  status         OrderStatus @default(PENDING)
+  mpPreferenceId String?
+  mpPaymentId    String?     @unique
+  mpStatusDetail String?
+  paidAt         DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  tickets        Ticket[]
+
+  @@index([showId])
+  @@index([status])
+  @@index([mpPaymentId])
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  orderId     String
+  order       Order        @relation(fields: [orderId], references: [id])
+  code        String       @unique
+  qrToken     String       @unique
+  status      TicketStatus @default(VALID)
+  checkedInAt DateTime?
+  checkedInBy String?
+  createdAt   DateTime     @default(now())
+
+  @@index([orderId])
+  @@index([code])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventType   String
+  externalId  String
+  rawPayload  Json
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([provider, externalId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+enum TicketStatus {
+  VALID
+  CHECKED_IN
+  VOIDED
+}
