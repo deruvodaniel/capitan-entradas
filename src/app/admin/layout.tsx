@@ -31,32 +31,38 @@ export default async function AdminLayout({
     <div className="flex-1 flex flex-col">
       <header className="border-b border-card-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/admin/shows" className="flex items-center gap-2 font-bold tracking-wider">
-              <img src="/logo.png" alt="" className="h-6" />
-              CAPITAN <span className="text-accent text-sm font-normal">admin</span>
+          {/* Logo — hide text on mobile */}
+          <Link href="/admin/shows" className="flex items-center gap-2 font-bold tracking-wider shrink-0">
+            <img src="/logo.png" alt="" className="h-6" />
+            <span className="hidden sm:inline">CAPITAN</span>
+            <span className="text-accent text-sm font-normal">admin</span>
+          </Link>
+
+          {/* Nav */}
+          <nav className="flex items-center gap-1 sm:gap-4 text-sm mx-2 sm:mx-6">
+            <Link
+              href="/admin/shows"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
+            >
+              <Music className="w-4 h-4" />
+              <span className="hidden sm:inline">Shows</span>
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link
-                href="/admin/shows"
-                className="flex items-center gap-1.5 text-muted hover:text-foreground"
-              >
-                <Music className="w-4 h-4" /> Shows
-              </Link>
-              <Link
-                href="/admin/orders"
-                className="flex items-center gap-1.5 text-muted hover:text-foreground"
-              >
-                <ShoppingCart className="w-4 h-4" /> Ventas
-              </Link>
-              <Link
-                href="/scan"
-                className="flex items-center gap-1.5 text-muted hover:text-foreground"
-              >
-                <ScanLine className="w-4 h-4" /> Check-in
-              </Link>
-            </nav>
-          </div>
+            <Link
+              href="/admin/orders"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span className="hidden sm:inline">Ventas</span>
+            </Link>
+            <Link
+              href="/scan"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
+            >
+              <ScanLine className="w-4 h-4" />
+              <span className="hidden sm:inline">Check-in</span>
+            </Link>
+          </nav>
+
           <UserButton />
         </div>
       </header>
