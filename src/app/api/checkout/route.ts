@@ -79,7 +79,13 @@ export async function POST(req: NextRequest) {
       data: { mpPreferenceId: preference.id },
     });
 
-    return NextResponse.json({ initPoint: preference.init_point });
+    // Use sandbox_init_point for testing, init_point for production
+    const isSandbox = process.env.MP_SANDBOX === "true";
+    const initPoint = isSandbox
+      ? preference.sandbox_init_point
+      : preference.init_point;
+
+    return NextResponse.json({ initPoint });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Datos inválidos", details: error.issues }, { status: 400 });

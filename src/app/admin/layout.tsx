@@ -1,12 +1,32 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Music, ShoppingCart, ScanLine } from "lucide-react";
+import { Music, ShoppingCart, ScanLine } from "lucide-react";
+import { isAdmin, getCurrentUserEmail } from "@/lib/auth";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  if (!(await isAdmin())) {
+    const email = await getCurrentUserEmail();
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-md text-center space-y-3">
+          <h1 className="text-2xl font-bold">Acceso restringido</h1>
+          <p className="text-muted text-sm">
+            Tu cuenta {email ? <strong>{email}</strong> : ""} no tiene permisos
+            de administrador. Contactá a un admin si pensás que esto es un
+            error.
+          </p>
+          <div className="pt-3">
+            <UserButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col">
       <header className="border-b border-card-border">

@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { verifyQrToken } from "@/lib/tickets/qr";
+import { isAdmin, getCurrentUserEmail } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const { userId } = await auth();
+  const adminEmail = await getCurrentUserEmail();
 
   try {
     const { qrToken } = await req.json();
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
       data: {
         status: "CHECKED_IN",
         checkedInAt: new Date(),
-        checkedInBy: userId,
+        checkedInBy: adminEmail || userId || "admin",
       },
     });
 
