@@ -7,8 +7,8 @@ export function verifyMpSignature(
 ): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    console.warn("MP_WEBHOOK_SECRET not configured, skipping signature check");
-    return true;
+    console.error("MP_WEBHOOK_SECRET not configured — rejecting webhook");
+    return false;
   }
 
   if (!xSignature || !xRequestId) return false;

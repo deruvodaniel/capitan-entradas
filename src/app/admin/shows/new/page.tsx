@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import ShowForm from "@/components/ShowForm";
+import { parseArgDatetimeLocal } from "@/lib/utils";
 
 export default function NewShowPage() {
   async function createShow(formData: FormData) {
@@ -14,9 +15,9 @@ export default function NewShowPage() {
       .replace(/^-|-$/g, "");
     const venue = formData.get("venue") as string;
     const address = (formData.get("address") as string) || null;
-    const startsAt = new Date(formData.get("startsAt") as string);
+    const startsAt = parseArgDatetimeLocal(formData.get("startsAt") as string);
     const doorsAtRaw = formData.get("doorsAt") as string;
-    const doorsAt = doorsAtRaw ? new Date(doorsAtRaw) : null;
+    const doorsAt = doorsAtRaw ? parseArgDatetimeLocal(doorsAtRaw) : null;
     const description = (formData.get("description") as string) || null;
     const coverImageUrl = (formData.get("coverImageUrl") as string) || null;
 

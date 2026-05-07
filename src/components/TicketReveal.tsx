@@ -15,17 +15,21 @@ export default function TicketReveal({ orderId }: { orderId: string }) {
   const [copied, setCopied] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     let attempts = 0;
     const maxAttempts = 15; // ~30 seconds
 
     async function poll() {
+      if (cancelled) return;
       try {
         const res = await fetch(`/api/orders/${orderId}/tickets`);
         if (res.ok) {
           const data = await res.json();
           if (data.tickets && data.tickets.length > 0) {
-            setTickets(data.tickets);
-            setLoading(false);
+            if (!cancelled) {
+              setTickets(data.tickets);
+              setLoading(false);
+            }
             return;
           }
         }
@@ -34,14 +38,15 @@ export default function TicketReveal({ orderId }: { orderId: string }) {
       }
 
       attempts++;
-      if (attempts < maxAttempts) {
+      if (attempts < maxAttempts && !cancelled) {
         setTimeout(poll, 2000);
-      } else {
+      } else if (!cancelled) {
         setLoading(false);
       }
     }
 
     poll();
+    return () => { cancelled = true; };
   }, [orderId]);
 
   function copyLink(url: string, code: string) {

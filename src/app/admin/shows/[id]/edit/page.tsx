@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import ShowForm from "@/components/ShowForm";
+import { toArgDatetimeLocal, parseArgDatetimeLocal } from "@/lib/utils";
 
 export default async function EditShowPage({
   params,
@@ -17,12 +18,6 @@ export default async function EditShowPage({
 
   if (!show) notFound();
 
-  const toLocalDatetime = (d: Date) => {
-    const offset = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - offset * 60000);
-    return local.toISOString().slice(0, 16);
-  };
-
   async function updateShow(formData: FormData) {
     "use server";
 
@@ -33,9 +28,9 @@ export default async function EditShowPage({
       .replace(/^-|-$/g, "");
     const venue = formData.get("venue") as string;
     const address = (formData.get("address") as string) || null;
-    const startsAt = new Date(formData.get("startsAt") as string);
+    const startsAt = parseArgDatetimeLocal(formData.get("startsAt") as string);
     const doorsAtRaw = formData.get("doorsAt") as string;
-    const doorsAt = doorsAtRaw ? new Date(doorsAtRaw) : null;
+    const doorsAt = doorsAtRaw ? parseArgDatetimeLocal(doorsAtRaw) : null;
     const description = (formData.get("description") as string) || null;
     const coverImageUrl = (formData.get("coverImageUrl") as string) || null;
 
@@ -122,8 +117,8 @@ export default async function EditShowPage({
           title: show.title,
           venue: show.venue,
           address: show.address || "",
-          startsAt: toLocalDatetime(show.startsAt),
-          doorsAt: show.doorsAt ? toLocalDatetime(show.doorsAt) : "",
+          startsAt: toArgDatetimeLocal(show.startsAt),
+          doorsAt: show.doorsAt ? toArgDatetimeLocal(show.doorsAt) : "",
           description: show.description || "",
           coverImageUrl: show.coverImageUrl || "",
           tiers: show.tiers.map((t) => ({

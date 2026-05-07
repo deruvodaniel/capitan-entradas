@@ -36,9 +36,17 @@ export async function POST(req: NextRequest) {
           rawPayload: Object.fromEntries(url.searchParams.entries()),
         },
       });
-    } catch {
-      // Unique constraint violation — already processed
-      return NextResponse.json({ ok: true });
+    } catch (err: unknown) {
+      // Only treat unique constraint violations as "already processed"
+      const isUniqueViolation =
+        err instanceof Error &&
+        (err.message.includes("Unique constraint") ||
+          err.message.includes("unique constraint") ||
+          (err as { code?: string }).code === "P2002");
+      if (isUniqueViolation) {
+        return NextResponse.json({ ok: true });
+      }
+      throw err; // Re-throw transient DB errors so MP retries
     }
 
     const payment = await getPayment(dataId);
@@ -78,6 +86,17 @@ export async function POST(req: NextRequest) {
         },
       });
       console.error("Amount mismatch for order", orderId);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Guard: don't re-process already PAID orders
+    if (order.status === "PAID" && payment.status === "approved") {
+      await prisma.webhookEvent.update({
+        where: {
+          provider_externalId: { provider: "mercadopago", externalId: dataId },
+        },
+        data: { processedAt: new Date() },
+      });
       return NextResponse.json({ ok: true });
     }
 

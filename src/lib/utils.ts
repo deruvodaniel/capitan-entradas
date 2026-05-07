@@ -37,6 +37,34 @@ export function formatDateShort(date: Date | string): string {
   }).format(new Date(date));
 }
 
+/**
+ * Convert a UTC Date to "YYYY-MM-DDTHH:mm" in Argentina timezone.
+ * Used for populating datetime-local inputs on the server.
+ */
+export function toArgDatetimeLocal(d: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: AR_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+/**
+ * Parse a "YYYY-MM-DDTHH:mm" string that represents Argentina local time
+ * into a UTC Date. Used when receiving datetime-local form values on the server.
+ */
+export function parseArgDatetimeLocal(s: string): Date {
+  // Append Argentina offset (-03:00) so JS interprets it correctly
+  return new Date(`${s}:00-03:00`);
+}
+
 export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
