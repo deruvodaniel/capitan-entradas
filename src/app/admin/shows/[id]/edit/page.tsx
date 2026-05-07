@@ -67,15 +67,30 @@ export default async function EditShowPage({
         },
       });
 
-      // Delete old tiers that have no sold tickets, recreate
-      await tx.ticketTier.deleteMany({
-        where: { showId: id, soldCount: 0 },
+      // Get current tiers
+      const currentTiers = await tx.ticketTier.findMany({
+        where: { showId: id },
       });
 
+      const newTierNames = new Set(newTiers.map((t) => t.name));
+
+      // Handle removed tiers: delete if no sales, deactivate if has sales
+      for (const existing of currentTiers) {
+        if (!newTierNames.has(existing.name)) {
+          if (existing.soldCount === 0) {
+            await tx.ticketTier.delete({ where: { id: existing.id } });
+          } else {
+            await tx.ticketTier.update({
+              where: { id: existing.id },
+              data: { isActive: false },
+            });
+          }
+        }
+      }
+
+      // Upsert tiers from form
       for (const tier of newTiers) {
-        const existing = await tx.ticketTier.findFirst({
-          where: { showId: id, name: tier.name },
-        });
+        const existing = currentTiers.find((t) => t.name === tier.name);
         if (existing) {
           await tx.ticketTier.update({
             where: { id: existing.id },
@@ -83,6 +98,7 @@ export default async function EditShowPage({
               priceArs: tier.priceArs,
               capacity: tier.capacity,
               sortOrder: tier.sortOrder,
+              isActive: true,
             },
           });
         } else {
