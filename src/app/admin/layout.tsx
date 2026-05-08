@@ -48,9 +48,8 @@ export default async function AdminLayout({
             href="/admin/shows"
             className="flex items-center gap-2 shrink-0"
           >
-            <img src="/favicon-192.png" alt="CAPITAN" className="h-7 w-7 rounded" />
-            <span className="font-bold text-sm">CAPITAN</span>
-            <span className="text-accent text-xs font-normal">admin</span>
+            <img src="/logo.png" alt="CAPITAN" className="h-7" />
+            <span className="text-accent text-sm font-normal">admin</span>
           </Link>
 
           {/* Nav (desktop inline, mobile hamburger) */}

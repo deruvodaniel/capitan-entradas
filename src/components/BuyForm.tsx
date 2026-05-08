@@ -32,12 +32,13 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
     ? selectedTier.capacity - selectedTier.soldCount
     : 0;
 
-  // Detect "pack" tiers: name contains "2x" → force quantity=2
+  // Detect "pack" tiers: name contains "2x", "3x", etc.
+  // effectiveQuantity = packSize * quantity (e.g. 2 packs of 2x = 4 tickets)
   const packMatch = selectedTier?.name.match(/(\d+)\s*x/i);
-  const packSize = packMatch ? parseInt(packMatch[1]) : 0;
+  const packSize = packMatch ? parseInt(packMatch[1]) : 1;
   const isPackTier = packSize >= 2;
-  const effectiveQuantity = isPackTier ? packSize : quantity;
-  const total = selectedTier ? selectedTier.priceArs * effectiveQuantity : 0;
+  const effectiveQuantity = packSize * quantity;
+  const total = selectedTier ? selectedTier.priceArs * quantity : 0;
 
   // Hint: if there's a promo tier and user is buying 2+ of a non-promo tier
   const promoTier = tiers.find(
@@ -135,32 +136,33 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
 
       {/* Quantity */}
       <div>
-        <label className="text-sm font-medium text-muted">Cantidad</label>
-        {isPackTier ? (
-          <p className="mt-1 text-sm text-accent font-medium">
-            🎟️ Pack de {packSize} entradas
-          </p>
-        ) : (
-          <div className="flex items-center gap-3 mt-1">
-            <button
-              type="button"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
-            >
-              -
-            </button>
-            <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-            <button
-              type="button"
-              onClick={() =>
-                setQuantity(Math.min(10, remaining, quantity + 1))
-              }
-              className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
-            >
-              +
-            </button>
-          </div>
-        )}
+        <label className="text-sm font-medium text-muted">
+          {isPackTier ? `Cantidad de packs (${packSize} entradas c/u)` : "Cantidad"}
+        </label>
+        <div className="flex items-center gap-3 mt-1">
+          <button
+            type="button"
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
+          >
+            -
+          </button>
+          <span className="text-xl font-bold w-8 text-center">{quantity}</span>
+          <button
+            type="button"
+            onClick={() =>
+              setQuantity(Math.min(10, Math.floor(remaining / packSize), quantity + 1))
+            }
+            className="w-10 h-10 rounded-lg border border-card-border bg-card flex items-center justify-center hover:border-muted"
+          >
+            +
+          </button>
+          {isPackTier && (
+            <span className="text-sm text-accent font-medium">
+              = {effectiveQuantity} 🎟️
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Buyer info */}
