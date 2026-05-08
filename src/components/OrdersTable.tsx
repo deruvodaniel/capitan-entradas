@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatArs, formatDateShort } from "@/lib/utils";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, Search } from "lucide-react";
 import OrderDrawer from "./OrderDrawer";
 
 type Status = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "REFUNDED";
@@ -32,6 +32,14 @@ const STATUS_COLORS: Record<Status, string> = {
   REFUNDED: "text-orange-400 bg-orange-500/20",
 };
 
+const STATUS_TABS: { label: string; value: Status | "ALL" }[] = [
+  { label: "Todas", value: "ALL" },
+  { label: "Pendientes", value: "PENDING" },
+  { label: "Pagadas", value: "PAID" },
+  { label: "Fallidas", value: "FAILED" },
+  { label: "Reemb.", value: "REFUNDED" },
+];
+
 export default function OrdersTable({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -39,14 +47,42 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
+  const [search, setSearch] = useState("");
 
-  const allChecked = checked.size === orders.length && orders.length > 0;
+  const filtered = useMemo(() => {
+    let result = orders;
+    if (statusFilter !== "ALL") {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.buyerName.toLowerCase().includes(q) ||
+          o.buyerEmail.toLowerCase().includes(q) ||
+          o.id.toLowerCase().includes(q) ||
+          o.tickets.some((t) => t.code.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [orders, statusFilter, search]);
+
+  // Count per status for tab badges
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { ALL: orders.length };
+    for (const o of orders) c[o.status] = (c[o.status] || 0) + 1;
+    return c;
+  }, [orders]);
+
+  const allChecked =
+    checked.size === filtered.length && filtered.length > 0;
 
   function toggleAll() {
     if (allChecked) {
       setChecked(new Set());
     } else {
-      setChecked(new Set(orders.map((o) => o.id)));
+      setChecked(new Set(filtered.map((o) => o.id)));
     }
   }
 
@@ -81,6 +117,56 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
 
   return (
     <>
+      {/* Filters */}
+      <div className="mb-4 space-y-3">
+        {/* Status tabs */}
+        <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+          {STATUS_TABS.map((tab) => {
+            const count = counts[tab.value] || 0;
+            const active = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => {
+                  setStatusFilter(tab.value);
+                  setChecked(new Set());
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  active
+                    ? "bg-accent/20 text-accent"
+                    : "text-muted hover:text-foreground hover:bg-card"
+                }`}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className={`min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                      active
+                        ? "bg-accent/30 text-accent"
+                        : "bg-card-border text-muted"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, email o código..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-card border border-card-border rounded-lg text-sm focus:outline-none focus:border-accent placeholder:text-muted/60"
+          />
+        </div>
+      </div>
+
       {/* Bulk action bar */}
       {checked.size > 0 && (
         <div className="mb-4 flex items-center gap-3 bg-card border border-card-border rounded-xl px-4 py-3">
@@ -117,198 +203,208 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
         </div>
       )}
 
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-muted border-b border-card-border">
-              <th className="pb-3 pr-2 w-8">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  onChange={toggleAll}
-                  className="rounded border-card-border accent-accent"
-                />
-              </th>
-              <th className="pb-3 font-medium">Fecha</th>
-              <th className="pb-3 font-medium hidden lg:table-cell">Show</th>
-              <th className="pb-3 font-medium">Comprador</th>
-              <th className="pb-3 font-medium">Tier</th>
-              <th className="pb-3 font-medium text-center">Cant.</th>
-              <th className="pb-3 font-medium">Total</th>
-              <th className="pb-3 font-medium">Estado</th>
-              <th className="pb-3 font-medium">Entradas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr
+      {filtered.length === 0 ? (
+        <p className="text-muted text-center py-12 text-sm">
+          {search ? "No se encontraron resultados." : "No hay órdenes con este filtro."}
+        </p>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted border-b border-card-border">
+                  <th className="pb-3 pr-2 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      onChange={toggleAll}
+                      className="rounded border-card-border accent-accent"
+                    />
+                  </th>
+                  <th className="pb-3 font-medium">Fecha</th>
+                  <th className="pb-3 font-medium hidden lg:table-cell">
+                    Show
+                  </th>
+                  <th className="pb-3 font-medium">Comprador</th>
+                  <th className="pb-3 font-medium">Tier</th>
+                  <th className="pb-3 font-medium text-center">Cant.</th>
+                  <th className="pb-3 font-medium">Total</th>
+                  <th className="pb-3 font-medium">Estado</th>
+                  <th className="pb-3 font-medium">Entradas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="border-b border-card-border/50 hover:bg-card/50 transition-colors"
+                  >
+                    <td
+                      className="py-3 pr-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked.has(order.id)}
+                        onChange={() => toggleOne(order.id)}
+                        className="rounded border-card-border accent-accent"
+                      />
+                    </td>
+                    <td
+                      className="py-3 text-muted whitespace-nowrap cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      {formatDateShort(order.createdAt)}
+                    </td>
+                    <td
+                      className="py-3 text-muted cursor-pointer hidden lg:table-cell"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      {order.show.title}
+                    </td>
+                    <td
+                      className="py-3 cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      <div className="font-medium">{order.buyerName}</div>
+                      <div className="text-xs text-muted">
+                        {order.buyerEmail}
+                      </div>
+                    </td>
+                    <td
+                      className="py-3 cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      {order.tier.name}
+                    </td>
+                    <td
+                      className="py-3 text-center cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      {order.quantity}
+                    </td>
+                    <td
+                      className="py-3 font-medium cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      {formatArs(order.totalArs)}
+                    </td>
+                    <td
+                      className="py-3 cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
+                        >
+                          {order.status}
+                        </span>
+                        <span className="text-[10px] text-muted font-mono">
+                          {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      className="py-3 cursor-pointer"
+                      onClick={() => setSelectedId(order.id)}
+                    >
+                      <div className="flex flex-wrap gap-1">
+                        {order.tickets.map((t) => (
+                          <span
+                            key={t.code}
+                            className={`text-xs font-mono ${
+                              t.status === "CHECKED_IN"
+                                ? "text-green-400"
+                                : t.status === "VOIDED"
+                                  ? "text-red-400 line-through"
+                                  : "text-muted"
+                            }`}
+                          >
+                            {t.code}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {filtered.map((order) => (
+              <div
                 key={order.id}
-                className="border-b border-card-border/50 hover:bg-card/50 transition-colors"
+                className="bg-card border border-card-border rounded-xl overflow-hidden"
               >
-                <td
-                  className="py-3 pr-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex items-start gap-3 p-4">
                   <input
                     type="checkbox"
                     checked={checked.has(order.id)}
                     onChange={() => toggleOne(order.id)}
-                    className="rounded border-card-border accent-accent"
+                    className="mt-1 rounded border-card-border accent-accent shrink-0"
                   />
-                </td>
-                <td
-                  className="py-3 text-muted whitespace-nowrap cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  {formatDateShort(order.createdAt)}
-                </td>
-                <td
-                  className="py-3 text-muted cursor-pointer hidden lg:table-cell"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  {order.show.title}
-                </td>
-                <td
-                  className="py-3 cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  <div className="font-medium">{order.buyerName}</div>
-                  <div className="text-xs text-muted">{order.buyerEmail}</div>
-                </td>
-                <td
-                  className="py-3 cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  {order.tier.name}
-                </td>
-                <td
-                  className="py-3 text-center cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  {order.quantity}
-                </td>
-                <td
-                  className="py-3 font-medium cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  {formatArs(order.totalArs)}
-                </td>
-                <td
-                  className="py-3 cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
-                    >
-                      {order.status}
-                    </span>
-                    <span className="text-[10px] text-muted font-mono">
-                      {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
-                    </span>
-                  </div>
-                </td>
-                <td
-                  className="py-3 cursor-pointer"
-                  onClick={() => setSelectedId(order.id)}
-                >
-                  <div className="flex flex-wrap gap-1">
-                    {order.tickets.map((t) => (
-                      <span
-                        key={t.code}
-                        className={`text-xs font-mono ${
-                          t.status === "CHECKED_IN"
-                            ? "text-green-400"
-                            : t.status === "VOIDED"
-                              ? "text-red-400 line-through"
-                              : "text-muted"
-                        }`}
-                      >
-                        {t.code}
+                  <div
+                    className="flex-1 min-w-0 cursor-pointer"
+                    onClick={() => setSelectedId(order.id)}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="font-medium truncate">
+                        {order.buyerName}
                       </span>
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile card list */}
-      <div className="md:hidden space-y-3">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="bg-card border border-card-border rounded-xl overflow-hidden"
-          >
-            <div className="flex items-start gap-3 p-4">
-              <input
-                type="checkbox"
-                checked={checked.has(order.id)}
-                onChange={() => toggleOne(order.id)}
-                className="mt-1 rounded border-card-border accent-accent shrink-0"
-              />
-              <div
-                className="flex-1 min-w-0 cursor-pointer"
-                onClick={() => setSelectedId(order.id)}
-              >
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-medium truncate">
-                    {order.buyerName}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
-                    >
-                      {order.status}
-                    </span>
-                    <span className="text-[10px] text-muted font-mono">
-                      {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted truncate">
-                  {order.buyerEmail}
-                </p>
-                <div className="flex items-center gap-3 mt-2 text-sm">
-                  <span className="text-muted">
-                    {order.tier.name}
-                  </span>
-                  <span className="text-muted">×{order.quantity}</span>
-                  <span className="font-medium ml-auto">
-                    {formatArs(order.totalArs)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-muted">
-                    {formatDateShort(order.createdAt)}
-                  </span>
-                  {order.tickets.length > 0 && (
-                    <div className="flex gap-1">
-                      {order.tickets.map((t) => (
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <span
-                          key={t.code}
-                          className={`text-xs font-mono ${
-                            t.status === "CHECKED_IN"
-                              ? "text-green-400"
-                              : t.status === "VOIDED"
-                                ? "text-red-400 line-through"
-                                : "text-muted"
-                          }`}
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
                         >
-                          {t.code}
+                          {order.status}
                         </span>
-                      ))}
+                        <span className="text-[10px] text-muted font-mono">
+                          {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                    <p className="text-xs text-muted truncate">
+                      {order.buyerEmail}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2 text-sm">
+                      <span className="text-muted">{order.tier.name}</span>
+                      <span className="text-muted">x{order.quantity}</span>
+                      <span className="font-medium ml-auto">
+                        {formatArs(order.totalArs)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-muted">
+                        {formatDateShort(order.createdAt)}
+                      </span>
+                      {order.tickets.length > 0 && (
+                        <div className="flex gap-1">
+                          {order.tickets.map((t) => (
+                            <span
+                              key={t.code}
+                              className={`text-xs font-mono ${
+                                t.status === "CHECKED_IN"
+                                  ? "text-green-400"
+                                  : t.status === "VOIDED"
+                                    ? "text-red-400 line-through"
+                                    : "text-muted"
+                              }`}
+                            >
+                              {t.code}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {selectedId && (
         <OrderDrawer
