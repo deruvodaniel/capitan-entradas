@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getPayment, refundPayment } from "@/lib/mp/client";
 import { verifyMpSignature } from "@/lib/mp/signature";
-import { generateQrToken } from "@/lib/tickets/qr";
-import { generateTicketCode } from "@/lib/tickets/code";
-import { sendTicketEmail } from "@/lib/email/service";
-import { appendSaleToSheet } from "@/lib/sheets/append";
-import { getBaseUrl, formatDate } from "@/lib/utils";
+import { fulfillOrder } from "@/lib/orders/fulfill";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +33,6 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (err: unknown) {
-      // Only treat unique constraint violations as "already processed"
       const isUniqueViolation =
         err instanceof Error &&
         (err.message.includes("Unique constraint") ||
@@ -46,7 +41,7 @@ export async function POST(req: NextRequest) {
       if (isUniqueViolation) {
         return NextResponse.json({ ok: true });
       }
-      throw err; // Re-throw transient DB errors so MP retries
+      throw err;
     }
 
     const payment = await getPayment(dataId);
@@ -101,9 +96,30 @@ export async function POST(req: NextRequest) {
     }
 
     switch (payment.status) {
-      case "approved":
-        await handleApproved(order, payment, dataId);
+      case "approved": {
+        const result = await fulfillOrder({
+          orderId: order.id,
+          mpPaymentId: String(payment.id),
+          mpStatusDetail: payment.status_detail,
+          paymentReference: dataId,
+        });
+        if (!result.success && result.error === "oversold") {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: {
+              status: "FAILED",
+              mpPaymentId: String(payment.id),
+              mpStatusDetail: "oversold_refunded",
+            },
+          });
+          try {
+            await refundPayment(String(payment.id));
+          } catch (e) {
+            console.error("Refund failed for payment", payment.id, e);
+          }
+        }
         break;
+      }
       case "rejected":
       case "cancelled":
         await prisma.order.update({
@@ -142,114 +158,5 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Webhook error:", error);
     return NextResponse.json({ ok: true });
-  }
-}
-
-interface OrderWithRelations {
-  id: string;
-  showId: string;
-  tierId: string;
-  quantity: number;
-  totalArs: number;
-  buyerName: string;
-  buyerEmail: string;
-  buyerDni: string | null;
-  show: { title: string; startsAt: Date; venue: string };
-  tier: { name: string; capacity: number };
-}
-
-async function handleApproved(
-  order: OrderWithRelations,
-  payment: { id: number; status_detail: string },
-  dataId: string
-) {
-  // Atomic capacity check + order update
-  const result = await prisma.$executeRawUnsafe(
-    `UPDATE "TicketTier" SET "soldCount" = "soldCount" + $1 WHERE id = $2 AND "soldCount" + $1 <= capacity`,
-    order.quantity,
-    order.tierId
-  );
-
-  if (result === 0) {
-    // Oversold — refund
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "FAILED",
-        mpPaymentId: String(payment.id),
-        mpStatusDetail: "oversold_refunded",
-      },
-    });
-    try {
-      await refundPayment(String(payment.id));
-    } catch (e) {
-      console.error("Refund failed for payment", payment.id, e);
-    }
-    return;
-  }
-
-  // Generate tickets
-  const tickets = Array.from({ length: order.quantity }, () => {
-    const ticketId = crypto.randomUUID().replace(/-/g, "").slice(0, 25);
-    const code = generateTicketCode();
-    const qrToken = generateQrToken(
-      ticketId,
-      order.id,
-      order.showId,
-      order.show.startsAt
-    );
-    return { id: ticketId, orderId: order.id, code, qrToken };
-  });
-
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "PAID",
-        mpPaymentId: String(payment.id),
-        mpStatusDetail: payment.status_detail,
-        paidAt: new Date(),
-      },
-    }),
-    ...tickets.map((t) => prisma.ticket.create({ data: t })),
-  ]);
-
-  // Send email + append to Google Sheets (must await in serverless)
-  const baseUrl = getBaseUrl();
-  const ticketUrls = tickets.map((t) => `${baseUrl}/ticket/${t.code}`);
-
-  try {
-    await sendTicketEmail({
-      to: order.buyerEmail,
-      buyerName: order.buyerName,
-      showTitle: order.show.title,
-      showDate: formatDate(order.show.startsAt),
-      venue: order.show.venue,
-      tierName: order.tier.name,
-      quantity: order.quantity,
-      ticketUrls,
-    });
-    console.log("Email sent to", order.buyerEmail);
-  } catch (e) {
-    console.error("Email send failed:", e);
-  }
-
-  try {
-    await appendSaleToSheet({
-      timestamp: new Date().toISOString(),
-      orderId: order.id,
-      paymentId: dataId,
-      showTitle: order.show.title,
-      showDate: order.show.startsAt.toISOString(),
-      tier: order.tier.name,
-      quantity: order.quantity,
-      totalArs: order.totalArs,
-      buyerName: order.buyerName,
-      buyerEmail: order.buyerEmail,
-      buyerDni: order.buyerDni || "",
-    });
-    console.log("Sheet row appended for order", order.id);
-  } catch (e) {
-    console.error("Sheets append failed:", e);
   }
 }

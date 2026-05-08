@@ -3,7 +3,6 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/db";
 import { createPreference } from "@/lib/mp/client";
 
-
 const checkoutSchema = z.object({
   showId: z.string(),
   tierId: z.string(),
@@ -11,6 +10,7 @@ const checkoutSchema = z.object({
   buyerName: z.string().min(1),
   buyerEmail: z.email(),
   buyerDni: z.string().optional(),
+  paymentMethod: z.enum(["mercadopago", "transfer"]).default("mercadopago"),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!tier || tier.showId !== data.showId) {
-      return NextResponse.json({ error: "Tier no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Tier no encontrado" },
+        { status: 404 }
+      );
     }
 
     if (!tier.isActive) {
@@ -32,11 +35,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (tier.soldCount + data.quantity > tier.capacity) {
-      return NextResponse.json({ error: "No hay suficientes entradas disponibles" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No hay suficientes entradas disponibles" },
+        { status: 400 }
+      );
     }
 
     const unitPrice = tier.priceArs;
     const totalArs = unitPrice * data.quantity;
+    const paymentMethod =
+      data.paymentMethod === "transfer" ? "TRANSFER" : "MERCADOPAGO";
 
     const order = await prisma.order.create({
       data: {
@@ -48,10 +56,18 @@ export async function POST(req: NextRequest) {
         quantity: data.quantity,
         unitPriceArs: unitPrice,
         totalArs,
+        paymentMethod,
       },
     });
 
-    // Derive base URL from the incoming request for reliability
+    // Transfer: no MP preference needed, redirect to transfer instructions
+    if (data.paymentMethod === "transfer") {
+      return NextResponse.json({
+        redirect: `/payment/transfer?order=${order.id}`,
+      });
+    }
+
+    // Mercado Pago: create preference and redirect
     const requestUrl = new URL(req.url);
     const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
     const preference = await createPreference({
@@ -81,7 +97,6 @@ export async function POST(req: NextRequest) {
       data: { mpPreferenceId: preference.id },
     });
 
-    // Use sandbox_init_point for testing, init_point for production
     const isSandbox = process.env.MP_SANDBOX === "true";
     const initPoint = isSandbox
       ? preference.sandbox_init_point
@@ -90,7 +105,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ initPoint });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Datos inválidos", details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Datos inválidos", details: error.issues },
+        { status: 400 }
+      );
     }
     console.error("Checkout error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

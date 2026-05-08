@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { generateQrDataUrl } from "@/lib/tickets/qr";
 import { getBaseUrl } from "@/lib/utils";
+import { fulfillOrder } from "@/lib/orders/fulfill";
 
 export async function GET(
   _req: NextRequest,
@@ -36,9 +37,10 @@ export async function GET(
       checkedInAt: t.checkedInAt,
       checkedInBy: t.checkedInBy,
       url: `${baseUrl}/ticket/${t.code}`,
-      qrDataUrl: t.status === "VALID" || t.status === "CHECKED_IN"
-        ? await generateQrDataUrl(t.qrToken)
-        : null,
+      qrDataUrl:
+        t.status === "VALID" || t.status === "CHECKED_IN"
+          ? await generateQrDataUrl(t.qrToken)
+          : null,
     }))
   );
 
@@ -74,21 +76,48 @@ export async function PATCH(
       return NextResponse.json({ error: "No encontrada" }, { status: 404 });
     }
 
-    // If transitioning to PAID and previously not PAID: increment soldCount
-    // If transitioning from PAID to something else: decrement soldCount + void tickets
     const wasPaid = order.status === "PAID";
     const goingPaid = data.status === "PAID" && !wasPaid;
     const leavingPaid = wasPaid && data.status && data.status !== "PAID";
 
-    await prisma.$transaction(async (tx) => {
-      if (goingPaid) {
-        await tx.$executeRawUnsafe(
-          `UPDATE "TicketTier" SET "soldCount" = "soldCount" + $1 WHERE id = $2`,
-          order.quantity,
-          order.tierId
+    // If transitioning to PAID: run full fulfillment (capacity check, tickets, email, sheets)
+    if (goingPaid) {
+      const result = await fulfillOrder({
+        orderId: id,
+        paymentReference: "transfer-admin",
+      });
+
+      if (!result.success) {
+        if (result.error === "oversold") {
+          return NextResponse.json(
+            { error: "No hay suficiente cupo" },
+            { status: 409 }
+          );
+        }
+        return NextResponse.json(
+          { error: result.error || "Error al procesar" },
+          { status: 500 }
         );
       }
-      if (leavingPaid) {
+
+      // If there are also buyer data edits, apply them
+      if (data.buyerName || data.buyerEmail || data.buyerDni !== undefined) {
+        await prisma.order.update({
+          where: { id },
+          data: {
+            buyerName: data.buyerName,
+            buyerEmail: data.buyerEmail,
+            buyerDni: data.buyerDni === null ? null : data.buyerDni,
+          },
+        });
+      }
+
+      return NextResponse.json({ ok: true });
+    }
+
+    // If leaving PAID: decrement capacity + void tickets
+    if (leavingPaid) {
+      await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(
           `UPDATE "TicketTier" SET "soldCount" = GREATEST("soldCount" - $1, 0) WHERE id = $2`,
           order.quantity,
@@ -98,18 +127,29 @@ export async function PATCH(
           where: { orderId: id },
           data: { status: "VOIDED" },
         });
-      }
-
-      await tx.order.update({
-        where: { id },
-        data: {
-          buyerName: data.buyerName,
-          buyerEmail: data.buyerEmail,
-          buyerDni: data.buyerDni === null ? null : data.buyerDni,
-          status: data.status,
-          paidAt: goingPaid ? new Date() : undefined,
-        },
+        await tx.order.update({
+          where: { id },
+          data: {
+            buyerName: data.buyerName,
+            buyerEmail: data.buyerEmail,
+            buyerDni: data.buyerDni === null ? null : data.buyerDni,
+            status: data.status,
+          },
+        });
       });
+
+      return NextResponse.json({ ok: true });
+    }
+
+    // Regular update (no status transition, or status change that doesn't involve PAID)
+    await prisma.order.update({
+      where: { id },
+      data: {
+        buyerName: data.buyerName,
+        buyerEmail: data.buyerEmail,
+        buyerDni: data.buyerDni === null ? null : data.buyerDni,
+        status: data.status,
+      },
     });
 
     return NextResponse.json({ ok: true });
@@ -140,7 +180,6 @@ export async function DELETE(
     }
 
     await prisma.$transaction(async (tx) => {
-      // If was PAID, free up capacity
       if (order.status === "PAID") {
         await tx.$executeRawUnsafe(
           `UPDATE "TicketTier" SET "soldCount" = GREATEST("soldCount" - $1, 0) WHERE id = $2`,

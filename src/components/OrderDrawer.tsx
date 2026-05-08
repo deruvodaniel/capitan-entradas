@@ -16,6 +16,8 @@ import {
 
 type Status = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "REFUNDED";
 
+type PaymentMethod = "MERCADOPAGO" | "TRANSFER";
+
 interface OrderSummary {
   id: string;
   createdAt: string;
@@ -25,6 +27,7 @@ interface OrderSummary {
   quantity: number;
   unitPriceArs: number;
   totalArs: number;
+  paymentMethod: PaymentMethod;
   status: Status;
   mpPaymentId: string | null;
   mpPreferenceId: string | null;
@@ -283,6 +286,14 @@ export default function OrderDrawer({
               <h3 className="font-medium text-sm text-muted mb-3">Pago</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
+                  <p className="text-muted text-xs">Medio</p>
+                  <p className="font-medium">
+                    {order.paymentMethod === "TRANSFER"
+                      ? "Transferencia"
+                      : "Mercado Pago"}
+                  </p>
+                </div>
+                <div>
                   <p className="text-muted text-xs">Creada</p>
                   <p>{formatDateShort(order.createdAt)}</p>
                 </div>
@@ -306,6 +317,19 @@ export default function OrderDrawer({
                 )}
               </div>
             </div>
+
+            {/* Quick confirm for transfer orders pending */}
+            {order.paymentMethod === "TRANSFER" &&
+              order.status === "PENDING" && (
+                <button
+                  onClick={() =>
+                    setConfirmAction({ type: "status", value: "PAID" })
+                  }
+                  className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors text-sm"
+                >
+                  ✓ Confirmar pago de transferencia
+                </button>
+              )}
 
             {/* Tickets / QR */}
             {order.tickets.length > 0 && (
@@ -424,7 +448,8 @@ export default function OrderDrawer({
                       )}
                       {confirmAction.value === "PAID" && (
                         <p className="text-muted mt-1">
-                          Se va a descontar del cupo disponible del tier.
+                          Se van a generar las entradas, enviar por email al
+                          comprador, y registrar en Google Sheets.
                         </p>
                       )}
                     </div>

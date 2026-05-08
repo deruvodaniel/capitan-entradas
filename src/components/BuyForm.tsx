@@ -42,8 +42,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
     (t) => t.name.toLowerCase().includes("promo") || t.name.match(/\d+\s*x/i)
   );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(paymentMethod: "mercadopago" | "transfer") {
     setError("");
     setLoading(true);
 
@@ -58,6 +57,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
           buyerName: name,
           buyerEmail: email,
           buyerDni: dni || undefined,
+          paymentMethod,
         }),
       });
 
@@ -68,7 +68,12 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
         return;
       }
 
-      window.location.href = data.initPoint;
+      // Redirect to MP or transfer page
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
+      } else if (data.redirect) {
+        window.location.href = data.redirect;
+      }
     } catch {
       setError("Error de conexión");
     } finally {
@@ -77,7 +82,10 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={(e) => e.preventDefault()}
+      className="space-y-5"
+    >
       {/* Tier selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-muted">Tipo de entrada</label>
@@ -207,17 +215,26 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={loading || !selectedTier || remaining <= 0}
-        className="w-full py-4 bg-accent hover:bg-accent-hover text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-      >
-        {loading ? "Procesando..." : `Comprar ${formatArs(total)}`}
-      </button>
+      {/* Two payment buttons */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          disabled={loading || !selectedTier || remaining <= 0 || !name || !email}
+          onClick={() => handleSubmit("mercadopago")}
+          className="w-full py-4 bg-accent hover:bg-accent-hover text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+        >
+          {loading ? "Procesando..." : `Pagar ${formatArs(total)} con Mercado Pago`}
+        </button>
 
-      <p className="text-xs text-muted text-center">
-        Serás redirigido a Mercado Pago para completar el pago
-      </p>
+        <button
+          type="button"
+          disabled={loading || !selectedTier || remaining <= 0 || !name || !email}
+          onClick={() => handleSubmit("transfer")}
+          className="w-full py-4 bg-card border-2 border-card-border hover:border-accent text-foreground font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base"
+        >
+          {loading ? "Procesando..." : "Pagar por transferencia"}
+        </button>
+      </div>
     </form>
   );
 }

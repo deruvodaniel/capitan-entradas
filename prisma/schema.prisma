@@ -51,6 +51,7 @@ model Order {
   quantity       Int
   unitPriceArs   Int
   totalArs       Int
+  paymentMethod  PaymentMethod @default(MERCADOPAGO)
   status         OrderStatus @default(PENDING)
   mpPreferenceId String?
   mpPaymentId    String?     @unique
@@ -91,6 +92,11 @@ model WebhookEvent {
   createdAt   DateTime  @default(now())
 
   @@unique([provider, externalId])
+}
+
+enum PaymentMethod {
+  MERCADOPAGO
+  TRANSFER
 }
 
 enum OrderStatus {

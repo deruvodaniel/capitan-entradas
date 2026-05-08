@@ -8,6 +8,8 @@ import OrderDrawer from "./OrderDrawer";
 
 type Status = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "REFUNDED";
 
+type PaymentMethod = "MERCADOPAGO" | "TRANSFER";
+
 interface Order {
   id: string;
   createdAt: Date | string;
@@ -15,6 +17,7 @@ interface Order {
   buyerEmail: string;
   quantity: number;
   totalArs: number;
+  paymentMethod: PaymentMethod;
   status: Status;
   show: { title: string };
   tier: { name: string };
@@ -195,11 +198,16 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                   className="py-3 cursor-pointer"
                   onClick={() => setSelectedId(order.id)}
                 >
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
-                  >
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
+                    >
+                      {order.status}
+                    </span>
+                    <span className="text-[10px] text-muted font-mono">
+                      {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                    </span>
+                  </div>
                 </td>
                 <td
                   className="py-3 cursor-pointer"
@@ -250,11 +258,16 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                   <span className="font-medium truncate">
                     {order.buyerName}
                   </span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_COLORS[order.status]}`}
-                  >
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status]}`}
+                    >
+                      {order.status}
+                    </span>
+                    <span className="text-[10px] text-muted font-mono">
+                      {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted truncate">
                   {order.buyerEmail}
