@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatArs, formatDate } from "@/lib/utils";
 import { Calendar, MapPin, Music } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default async function HomePage() {
   const shows = await prisma.show.findMany({
@@ -109,19 +110,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      <footer className="border-t border-card-border mt-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center text-sm text-muted">
-          <p>CAPITAN 🤘</p>
-          <a
-            href="https://linktr.ee/rockcapitan"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent hover:underline"
-          >
-            linktr.ee/rockcapitan
-          </a>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

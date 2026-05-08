@@ -36,6 +36,7 @@ export async function POST() {
         buyerName: order.buyerName,
         buyerEmail: order.buyerEmail,
         buyerDni: order.buyerDni || "",
+        buyerPhone: order.buyerPhone || "",
       });
       results.push({ orderId: order.id, ok: true });
     } catch (e) {

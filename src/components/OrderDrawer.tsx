@@ -23,6 +23,7 @@ interface OrderSummary {
   createdAt: string;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone: string | null;
   buyerDni: string | null;
   quantity: number;
   unitPriceArs: number;
@@ -76,6 +77,7 @@ export default function OrderDrawer({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [dni, setDni] = useState("");
   const [copiedCode, setCopiedCode] = useState("");
   const [confirmAction, setConfirmAction] = useState<{
@@ -105,6 +107,7 @@ export default function OrderDrawer({
         setOrder(data);
         setName(data.buyerName);
         setEmail(data.buyerEmail);
+        setPhone(data.buyerPhone || "");
         setDni(data.buyerDni || "");
       }
     } catch {
@@ -121,6 +124,7 @@ export default function OrderDrawer({
       body: JSON.stringify({
         buyerName: name,
         buyerEmail: email,
+        buyerPhone: phone || null,
         buyerDni: dni || null,
       }),
     });
@@ -245,6 +249,12 @@ export default function OrderDrawer({
                     placeholder="Email"
                   />
                   <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3 py-2 bg-background border border-card-border rounded-lg text-sm"
+                    placeholder="Teléfono"
+                  />
+                  <input
                     value={dni}
                     onChange={(e) => setDni(e.target.value)}
                     className="w-full px-3 py-2 bg-background border border-card-border rounded-lg text-sm"
@@ -262,6 +272,7 @@ export default function OrderDrawer({
                         setEditing(false);
                         setName(order.buyerName);
                         setEmail(order.buyerEmail);
+                        setPhone(order.buyerPhone || "");
                         setDni(order.buyerDni || "");
                       }}
                       className="px-3 py-1.5 text-sm text-muted hover:text-foreground"
@@ -274,6 +285,9 @@ export default function OrderDrawer({
                 <div className="space-y-1 text-sm">
                   <p className="font-medium">{order.buyerName}</p>
                   <p className="text-muted">{order.buyerEmail}</p>
+                  {order.buyerPhone && (
+                    <p className="text-muted">Tel: {order.buyerPhone}</p>
+                  )}
                   {order.buyerDni && (
                     <p className="text-muted">DNI: {order.buyerDni}</p>
                   )}

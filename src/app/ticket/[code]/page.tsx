@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { generateQrDataUrl } from "@/lib/tickets/qr";
 import { Calendar, MapPin, Ticket } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default async function TicketPage({
   params,
@@ -99,6 +100,8 @@ export default async function TicketPage({
           Presentá este QR en la puerta. No lo compartas.
         </p>
       </div>
+
+      <Footer />
     </main>
   );
 }

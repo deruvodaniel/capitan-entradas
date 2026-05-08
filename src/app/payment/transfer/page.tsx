@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { Clock, Copy, Building2 } from "lucide-react";
 import { formatArs } from "@/lib/utils";
 import CopyButton from "@/components/CopyButton";
+import Footer from "@/components/Footer";
 
 export default async function PaymentTransferPage({
   searchParams,
@@ -118,6 +119,8 @@ export default async function PaymentTransferPage({
           </Link>
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

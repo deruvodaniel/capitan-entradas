@@ -12,6 +12,7 @@ interface AdminTransferNotification {
   orderId: string;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone?: string;
   showTitle: string;
   tierName: string;
   quantity: number;
@@ -36,7 +37,7 @@ export async function sendAdminTransferNotification(
         <p style="color:#e6a817;margin:8px 0 0;font-weight:bold">💸 Nueva transferencia pendiente</p>
       </div>
       <div style="background:#f9f9f9;border-radius:12px;padding:20px;margin:20px 0">
-        <p style="margin:0 0 8px"><strong>${data.buyerName}</strong> (${data.buyerEmail})</p>
+        <p style="margin:0 0 8px"><strong>${data.buyerName}</strong> (${data.buyerEmail})${data.buyerPhone ? ` — Tel: ${data.buyerPhone}` : ""}</p>
         <p style="margin:0 0 4px;color:#666">🎸 ${data.showTitle}</p>
         <p style="margin:0 0 4px;color:#666">🎟️ ${data.tierName} × ${data.quantity}</p>
         <p style="margin:12px 0 0;font-size:24px;font-weight:bold">${totalFormatted}</p>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { CheckCircle } from "lucide-react";
 import { formatArs } from "@/lib/utils";
 import TicketReveal from "@/components/TicketReveal";
+import Footer from "@/components/Footer";
 
 export default async function PaymentSuccessPage({
   searchParams,
@@ -70,6 +71,8 @@ export default async function PaymentSuccessPage({
           </Link>
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

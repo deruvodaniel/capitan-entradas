@@ -53,11 +53,24 @@ export async function GET(
 const patchSchema = z.object({
   buyerName: z.string().min(1).optional(),
   buyerEmail: z.email().optional(),
+  buyerPhone: z.string().optional().nullable(),
   buyerDni: z.string().optional().nullable(),
   status: z
     .enum(["PENDING", "PAID", "FAILED", "EXPIRED", "REFUNDED"])
     .optional(),
 });
+
+/** Pick only the buyer-editable fields that were sent */
+function buyerDataFrom(data: z.infer<typeof patchSchema>) {
+  return {
+    ...(data.buyerName !== undefined && { buyerName: data.buyerName }),
+    ...(data.buyerEmail !== undefined && { buyerEmail: data.buyerEmail }),
+    ...(data.buyerPhone !== undefined && { buyerPhone: data.buyerPhone }),
+    ...(data.buyerDni !== undefined && {
+      buyerDni: data.buyerDni === null ? null : data.buyerDni,
+    }),
+  };
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -101,14 +114,11 @@ export async function PATCH(
       }
 
       // If there are also buyer data edits, apply them
-      if (data.buyerName || data.buyerEmail || data.buyerDni !== undefined) {
+      const buyerEdits = buyerDataFrom(data);
+      if (Object.keys(buyerEdits).length > 0) {
         await prisma.order.update({
           where: { id },
-          data: {
-            buyerName: data.buyerName,
-            buyerEmail: data.buyerEmail,
-            buyerDni: data.buyerDni === null ? null : data.buyerDni,
-          },
+          data: buyerEdits,
         });
       }
 
@@ -130,9 +140,7 @@ export async function PATCH(
         await tx.order.update({
           where: { id },
           data: {
-            buyerName: data.buyerName,
-            buyerEmail: data.buyerEmail,
-            buyerDni: data.buyerDni === null ? null : data.buyerDni,
+            ...buyerDataFrom(data),
             status: data.status,
           },
         });
@@ -145,9 +153,7 @@ export async function PATCH(
     await prisma.order.update({
       where: { id },
       data: {
-        buyerName: data.buyerName,
-        buyerEmail: data.buyerEmail,
-        buyerDni: data.buyerDni === null ? null : data.buyerDni,
+        ...buyerDataFrom(data),
         status: data.status,
       },
     });

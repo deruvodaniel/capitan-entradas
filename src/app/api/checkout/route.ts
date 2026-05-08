@@ -10,7 +10,11 @@ const checkoutSchema = z.object({
   quantity: z.int().min(1).max(10),
   buyerName: z.string().min(1),
   buyerEmail: z.email(),
-  buyerDni: z.string().optional(),
+  buyerPhone: z.string().optional(),
+  buyerDni: z
+    .string()
+    .regex(/^\d{7,8}$/, "DNI debe tener 7 u 8 dígitos")
+    .optional(),
   paymentMethod: z.enum(["mercadopago", "transfer"]).default("mercadopago"),
 });
 
@@ -53,6 +57,7 @@ export async function POST(req: NextRequest) {
         tierId: data.tierId,
         buyerName: data.buyerName,
         buyerEmail: data.buyerEmail,
+        buyerPhone: data.buyerPhone,
         buyerDni: data.buyerDni,
         quantity: data.quantity,
         unitPriceArs: unitPrice,
@@ -71,6 +76,7 @@ export async function POST(req: NextRequest) {
           orderId: order.id,
           buyerName: data.buyerName,
           buyerEmail: data.buyerEmail,
+          buyerPhone: data.buyerPhone,
           showTitle: `${tier.show.title} - ${tier.name}`,
           tierName: tier.name,
           quantity: data.quantity,

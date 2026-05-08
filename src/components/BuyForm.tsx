@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatArs } from "@/lib/utils";
+import PhoneInput from "@/components/PhoneInput";
 
 interface Tier {
   id: string;
@@ -21,6 +22,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [dni, setDni] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -56,6 +58,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
           quantity: effectiveQuantity,
           buyerName: name,
           buyerEmail: email,
+          buyerPhone: phone && phone.length > 5 ? phone : undefined,
           buyerDni: dni || undefined,
           paymentMethod,
         }),
@@ -185,14 +188,33 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-muted">DNI (opcional)</label>
+          <label className="text-sm font-medium text-muted">
+            Teléfono <span className="text-muted/60 font-normal">(opcional)</span>
+          </label>
+          <div className="mt-1">
+            <PhoneInput value={phone} onChange={setPhone} />
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-muted">
+            DNI <span className="text-muted/60 font-normal">(opcional)</span>
+          </label>
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={8}
             value={dni}
-            onChange={(e) => setDni(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "");
+              if (v.length <= 8) setDni(v);
+            }}
             className="mt-1 w-full px-4 py-3 bg-card border border-card-border rounded-lg focus:outline-none focus:border-accent"
             placeholder="12345678"
           />
+          {dni && (dni.length < 7 || dni.length > 8) && (
+            <p className="text-xs text-red-400 mt-1">El DNI debe tener 7 u 8 dígitos</p>
+          )}
         </div>
       </div>
 

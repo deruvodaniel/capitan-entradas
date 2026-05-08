@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default function PaymentPendingPage() {
   return (
@@ -18,6 +19,8 @@ export default function PaymentPendingPage() {
           Volver al inicio
         </Link>
       </div>
+
+      <Footer />
     </main>
   );
 }

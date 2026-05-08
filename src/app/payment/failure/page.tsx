@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { XCircle } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default function PaymentFailurePage() {
   return (
@@ -17,6 +18,8 @@ export default function PaymentFailurePage() {
           Volver al inicio
         </Link>
       </div>
+
+      <Footer />
     </main>
   );
 }

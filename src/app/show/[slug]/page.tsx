@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { Calendar, MapPin, ArrowLeft, Clock } from "lucide-react";
 import BuyForm from "@/components/BuyForm";
+import Footer from "@/components/Footer";
 
 export default async function ShowPage({
   params,
@@ -89,6 +90,8 @@ export default async function ShowPage({
           )}
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }

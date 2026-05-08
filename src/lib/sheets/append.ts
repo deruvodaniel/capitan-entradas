@@ -25,6 +25,7 @@ interface SaleRow {
   buyerName: string;
   buyerEmail: string;
   buyerDni: string;
+  buyerPhone: string;
 }
 
 export async function appendSaleToSheet(row: SaleRow): Promise<void> {
@@ -41,7 +42,7 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
 
   const res = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetsId,
-    range: "Ventas!A:K",
+    range: "Ventas!A:L",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -57,6 +58,7 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
           row.buyerName,
           row.buyerEmail,
           row.buyerDni || "",
+          row.buyerPhone || "",
         ],
       ],
     },

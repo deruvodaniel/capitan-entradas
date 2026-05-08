@@ -117,6 +117,7 @@ export async function fulfillOrder(
       buyerName: order.buyerName,
       buyerEmail: order.buyerEmail,
       buyerDni: order.buyerDni || "",
+      buyerPhone: order.buyerPhone || "",
     });
     console.log("Sheet row appended for order", order.id);
   } catch (e) {

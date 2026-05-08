@@ -47,6 +47,7 @@ model Order {
   tier           TicketTier  @relation(fields: [tierId], references: [id])
   buyerName      String
   buyerEmail     String
+  buyerPhone     String?
   buyerDni       String?
   quantity       Int
   unitPriceArs   Int
