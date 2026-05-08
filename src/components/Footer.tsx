@@ -22,10 +22,10 @@ export default function Footer() {
   return (
     <footer className="border-t border-card-border mt-8">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Band name */}
+        {/* Logo */}
         <div className="text-center mb-5">
-          <p className="font-bold text-base tracking-widest">CAPITAN</p>
-          <p className="text-xs text-muted mt-1">Rock en vivo</p>
+          <img src="/logo.png" alt="CAPITAN" className="h-10 mx-auto mb-1" />
+          <p className="text-xs text-muted">Rock en vivo</p>
         </div>
 
         {/* Social links */}

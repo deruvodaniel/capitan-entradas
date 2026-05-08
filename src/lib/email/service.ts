@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 function logoUrl() {
-  return `${getBaseUrl()}/favicon-192.png`;
+  return `${getBaseUrl()}/logo.png`;
 }
 
 interface AdminTransferNotification {
@@ -38,7 +38,7 @@ export async function sendAdminTransferNotification(
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#111;color:#fff;border-radius:16px">
       <div style="text-align:center;padding:16px 0">
-        <img src="${logoUrl()}" alt="CAPITAN" width="48" height="48" style="border-radius:8px;margin-bottom:8px" />
+        <img src="${logoUrl()}" alt="CAPITAN" style="max-width:180px;height:auto;margin-bottom:8px" />
         <p style="color:#e6a817;margin:8px 0 0;font-weight:bold;font-size:14px">Nueva transferencia pendiente</p>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #333">
@@ -88,7 +88,7 @@ export async function sendTicketEmail(data: TicketEmailData): Promise<void> {
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#111;color:#fff;border-radius:16px">
       <div style="text-align:center;padding:20px 0">
-        <img src="${logoUrl()}" alt="CAPITAN" width="56" height="56" style="border-radius:10px;margin-bottom:8px" />
+        <img src="${logoUrl()}" alt="CAPITAN" style="max-width:200px;height:auto;margin-bottom:8px" />
         <p style="color:#999;margin:4px 0 0;font-size:13px">Tu entrada está lista</p>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:24px;margin:20px 0;border:1px solid #333">
