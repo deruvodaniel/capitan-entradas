@@ -10,14 +10,6 @@ import { getBaseUrl, formatDate } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("Webhook received. ENV check:", {
-      MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN ? "SET" : "MISSING",
-      MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET ? "SET" : "MISSING",
-      DATABASE_URL: process.env.DATABASE_URL ? "SET" : "MISSING",
-      TICKET_JWT_SECRET: process.env.TICKET_JWT_SECRET ? "SET" : "MISSING",
-      GMAIL_USER: process.env.GMAIL_USER ? "SET" : "MISSING",
-      GOOGLE_SHEETS_ID: process.env.GOOGLE_SHEETS_ID ? "SET" : "MISSING",
-    });
     const url = new URL(req.url);
     const type = url.searchParams.get("type") || url.searchParams.get("topic");
     const dataId =
