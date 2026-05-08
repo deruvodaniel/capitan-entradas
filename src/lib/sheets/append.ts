@@ -26,7 +26,7 @@ interface SaleRow {
 }
 
 export async function appendSaleToSheet(row: SaleRow): Promise<void> {
-  const sheetsId = process.env.GOOGLE_SHEETS_ID;
+  const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
   if (!sheetsId) {
     console.warn("GOOGLE_SHEETS_ID not set, skipping sheets append");
     return;
