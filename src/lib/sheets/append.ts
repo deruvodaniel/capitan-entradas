@@ -1,10 +1,12 @@
 import { google } from "googleapis";
 
 function getAuth() {
-  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON?.trim();
   if (!json) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
 
-  const credentials = JSON.parse(Buffer.from(json, "base64").toString("utf8"));
+  const credentials = JSON.parse(
+    Buffer.from(json, "base64").toString("utf8")
+  );
   return new google.auth.GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -32,10 +34,12 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
     return;
   }
 
+  console.log("[Sheets] Appending row for order", row.orderId, "to sheet", sheetsId.slice(0, 8) + "...");
+
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
 
-  await sheets.spreadsheets.values.append({
+  const res = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetsId,
     range: "Ventas!A:K",
     valueInputOption: "USER_ENTERED",
@@ -57,4 +61,6 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
       ],
     },
   });
+
+  console.log("[Sheets] Success:", res.data.updates?.updatedRange);
 }
