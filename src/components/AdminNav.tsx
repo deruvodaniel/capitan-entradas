@@ -15,6 +15,7 @@ import {
 interface AdminNavProps {
   pendingTransfers: number;
   sheetsUrl: string | null;
+  userButton: React.ReactNode; // passed from server layout
 }
 
 const NAV_ITEMS = [
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
 export default function AdminNav({
   pendingTransfers,
   sheetsUrl,
+  userButton,
 }: AdminNavProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function AdminNav({
 
   return (
     <>
-      {/* Desktop nav */}
+      {/* Desktop nav — hidden on mobile */}
       <nav className="hidden sm:flex items-center gap-1 sm:gap-2 mx-2 sm:mx-6 text-sm">
         {NAV_ITEMS.map((item) => (
           <Link
@@ -71,7 +73,7 @@ export default function AdminNav({
         )}
       </nav>
 
-      {/* Mobile hamburger */}
+      {/* Mobile: hamburger only (avatar goes inside dropdown) */}
       <button
         onClick={() => setOpen(!open)}
         className="sm:hidden p-2 rounded-lg text-muted hover:text-foreground hover:bg-card/50 relative"
@@ -123,6 +125,12 @@ export default function AdminNav({
                 <span>Google Sheets</span>
               </a>
             )}
+
+            {/* Avatar / account at the bottom of mobile menu */}
+            <div className="border-t border-card-border mt-1 pt-3 pb-1 px-4 flex items-center gap-3">
+              {userButton}
+              <span className="text-sm text-muted">Mi cuenta</span>
+            </div>
           </div>
         </>
       )}

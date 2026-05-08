@@ -30,7 +30,6 @@ export default async function AdminLayout({
     );
   }
 
-  // Count pending transfers for badge
   const pendingTransfers = await prisma.order.count({
     where: { paymentMethod: "TRANSFER", status: "PENDING" },
   });
@@ -44,21 +43,22 @@ export default async function AdminLayout({
       <header className="border-b border-card-border sticky top-0 bg-background/95 backdrop-blur z-30">
         <div className="relative max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo */}
-          <Link
-            href="/admin/shows"
-            className="flex items-center gap-2 shrink-0"
-          >
+          <Link href="/admin/shows" className="flex items-center gap-2 shrink-0">
             <img src="/logo.png" alt="CAPITAN" className="h-7" />
             <span className="text-accent text-sm font-normal">admin</span>
           </Link>
 
-          {/* Nav (desktop inline, mobile hamburger) */}
+          {/* Nav: desktop inline links / mobile hamburger */}
           <AdminNav
             pendingTransfers={pendingTransfers}
             sheetsUrl={sheetsUrl}
+            userButton={<UserButton />}
           />
 
-          <UserButton />
+          {/* Avatar: visible only on desktop */}
+          <div className="hidden sm:block">
+            <UserButton />
+          </div>
         </div>
       </header>
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
