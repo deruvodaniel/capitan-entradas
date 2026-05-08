@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/db";
 import { createPreference } from "@/lib/mp/client";
+import { sendAdminTransferNotification } from "@/lib/email/service";
 
 const checkoutSchema = z.object({
   showId: z.string(),
@@ -62,6 +63,24 @@ export async function POST(req: NextRequest) {
 
     // Transfer: no MP preference needed, redirect to transfer instructions
     if (data.paymentMethod === "transfer") {
+      // Notify admin(s) about pending transfer (fire and forget but await for serverless)
+      const requestUrl = new URL(req.url);
+      const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      try {
+        await sendAdminTransferNotification({
+          orderId: order.id,
+          buyerName: data.buyerName,
+          buyerEmail: data.buyerEmail,
+          showTitle: `${tier.show.title} - ${tier.name}`,
+          tierName: tier.name,
+          quantity: data.quantity,
+          totalArs: totalArs,
+          adminUrl: `${baseUrl}/admin/orders`,
+        });
+      } catch (e) {
+        console.error("Admin notification failed:", e);
+      }
+
       return NextResponse.json({
         redirect: `/payment/transfer?order=${order.id}`,
       });

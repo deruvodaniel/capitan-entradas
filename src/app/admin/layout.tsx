@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { Music, ShoppingCart, ScanLine } from "lucide-react";
+import { Music, ShoppingCart, ScanLine, FileSpreadsheet } from "lucide-react";
 import { isAdmin, getCurrentUserEmail } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -27,11 +30,20 @@ export default async function AdminLayout({
     );
   }
 
+  // Count pending transfers for badge
+  const pendingTransfers = await prisma.order.count({
+    where: { paymentMethod: "TRANSFER", status: "PENDING" },
+  });
+
+  const sheetsUrl = process.env.GOOGLE_SHEETS_ID
+    ? `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEETS_ID.trim()}`
+    : null;
+
   return (
     <div className="flex-1 flex flex-col">
       <header className="border-b border-card-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* Logo — hide text on mobile */}
+          {/* Logo */}
           <Link href="/admin/shows" className="flex items-center gap-2 shrink-0">
             <img src="/logo.png" alt="CAPITAN" className="h-7" />
             <span className="text-accent text-sm font-normal">admin</span>
@@ -48,10 +60,15 @@ export default async function AdminLayout({
             </Link>
             <Link
               href="/admin/orders"
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
+              className="relative flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
             >
               <ShoppingCart className="w-4 h-4" />
               <span className="hidden sm:inline">Ventas</span>
+              {pendingTransfers > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1">
+                  {pendingTransfers}
+                </span>
+              )}
             </Link>
             <Link
               href="/scan"
@@ -60,6 +77,18 @@ export default async function AdminLayout({
               <ScanLine className="w-4 h-4" />
               <span className="hidden sm:inline">Check-in</span>
             </Link>
+            {sheetsUrl && (
+              <a
+                href={sheetsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-muted hover:text-foreground hover:bg-card/50 transition-colors"
+                title="Google Sheets"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden sm:inline">Sheet</span>
+              </a>
+            )}
           </nav>
 
           <UserButton />

@@ -215,24 +215,33 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
         </div>
       )}
 
-      {/* Two payment buttons */}
+      {/* Payment buttons — transfer first (no commission, instant funds) */}
       <div className="space-y-3">
         <button
           type="button"
           disabled={loading || !selectedTier || remaining <= 0 || !name || !email}
-          onClick={() => handleSubmit("mercadopago")}
+          onClick={() => handleSubmit("transfer")}
           className="w-full py-4 bg-accent hover:bg-accent-hover text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
         >
-          {loading ? "Procesando..." : `Pagar ${formatArs(total)} con Mercado Pago`}
+          {loading ? "Procesando..." : `Pagar ${formatArs(total)} por transferencia`}
         </button>
+        <p className="text-xs text-center text-green-400/80">
+          ⚡ Acreditación inmediata — sin comisiones
+        </p>
+
+        <div className="relative flex items-center gap-3 py-1">
+          <div className="flex-1 border-t border-card-border" />
+          <span className="text-xs text-muted">o</span>
+          <div className="flex-1 border-t border-card-border" />
+        </div>
 
         <button
           type="button"
           disabled={loading || !selectedTier || remaining <= 0 || !name || !email}
-          onClick={() => handleSubmit("transfer")}
-          className="w-full py-4 bg-card border-2 border-card-border hover:border-accent text-foreground font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base"
+          onClick={() => handleSubmit("mercadopago")}
+          className="w-full py-3 bg-card border border-card-border hover:border-muted text-muted hover:text-foreground font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
-          {loading ? "Procesando..." : "Pagar por transferencia"}
+          {loading ? "Procesando..." : "Pagar con Mercado Pago"}
         </button>
       </div>
     </form>
