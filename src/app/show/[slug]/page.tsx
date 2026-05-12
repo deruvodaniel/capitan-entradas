@@ -29,7 +29,7 @@ export default async function ShowPage({
   }
 
   const isPast = show.startsAt < new Date();
-  const mapsUrl = getMapsUrl({ mapUrl: show.mapUrl, venue: show.venue, address: show.address });
+  const mapsUrl = getMapsUrl({ mapUrl: show.mapUrl });
 
   return (
     <main className="flex-1">

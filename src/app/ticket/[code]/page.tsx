@@ -27,11 +27,7 @@ export default async function TicketPage({
   }
 
   const qrDataUrl = await generateQrDataUrl(ticket.qrToken);
-  const mapsUrl = getMapsUrl({
-    mapUrl: ticket.order.show.mapUrl,
-    venue: ticket.order.show.venue,
-    address: ticket.order.show.address,
-  });
+  const mapsUrl = getMapsUrl({ mapUrl: ticket.order.show.mapUrl });
 
   return (
     <main className="flex-1 flex flex-col">

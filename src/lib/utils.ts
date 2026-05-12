@@ -74,15 +74,9 @@ export function getBaseUrl(): string {
 }
 
 
-/** Returns the best available Maps URL: explicit mapUrl, or auto-generated from venue+address */
+/** Returns the explicit Maps URL if set, otherwise null. No auto-generation. */
 export function getMapsUrl(opts: {
   mapUrl?: string | null;
-  venue: string;
-  address?: string | null;
 }): string | null {
-  if (opts.mapUrl) return opts.mapUrl;
-  if (opts.address) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${opts.venue} ${opts.address}`)}`;
-  }
-  return null;
+  return opts.mapUrl || null;
 }

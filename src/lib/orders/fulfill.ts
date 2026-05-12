@@ -95,7 +95,7 @@ export async function fulfillOrder(
       showDate: formatDate(order.show.startsAt),
       venue: order.show.venue,
       address: order.show.address ?? undefined,
-      mapUrl: getMapsUrl({ mapUrl: order.show.mapUrl, venue: order.show.venue, address: order.show.address }) ?? undefined,
+      mapUrl: getMapsUrl({ mapUrl: order.show.mapUrl }) ?? undefined,
       tierName: order.tier.name,
       quantity: order.quantity,
       ticketUrls,
