@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Copy, Check, Download } from "lucide-react";
 
 interface TicketData {
@@ -13,6 +13,13 @@ export default function TicketReveal({ orderId }: { orderId: string }) {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState("");
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +59,8 @@ export default function TicketReveal({ orderId }: { orderId: string }) {
   function copyLink(url: string, code: string) {
     navigator.clipboard.writeText(url);
     setCopied(code);
-    setTimeout(() => setCopied(""), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(""), 2000);
   }
 
   if (loading) {
