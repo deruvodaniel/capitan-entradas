@@ -5,9 +5,23 @@
  * Run ONCE before deploying the formatArs fix:
  *   npx tsx scripts/migrate-centavos-to-pesos.ts
  */
-import { PrismaClient } from "../src/generated/prisma";
+import "dotenv/config";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+function cleanUrl(raw: string) {
+  const u = new URL(raw);
+  u.searchParams.delete("sslmode");
+  u.searchParams.delete("pgbouncer");
+  return u.toString();
+}
+
+const pool = new Pool({
+  connectionString: cleanUrl(process.env.DATABASE_URL!),
+  ssl: { rejectUnauthorized: false },
+});
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
   const [tiers, orders] = await Promise.all([
