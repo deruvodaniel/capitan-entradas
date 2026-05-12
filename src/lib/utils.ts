@@ -4,12 +4,12 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
-export function formatArs(centavos: number): string {
+export function formatArs(pesos: number): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
     currency: "ARS",
     minimumFractionDigits: 0,
-  }).format(centavos / 100);
+  }).format(pesos);
 }
 
 const AR_TZ = "America/Argentina/Buenos_Aires";
