@@ -28,6 +28,7 @@ export default async function EditShowPage({
       .replace(/^-|-$/g, "");
     const venue = formData.get("venue") as string;
     const address = (formData.get("address") as string) || null;
+    const mapUrl = (formData.get("mapUrl") as string) || null;
     const startsAt = parseArgDatetimeLocal(formData.get("startsAt") as string);
     const doorsAtRaw = formData.get("doorsAt") as string;
     const doorsAt = doorsAtRaw ? parseArgDatetimeLocal(doorsAtRaw) : null;
@@ -55,6 +56,7 @@ export default async function EditShowPage({
           slug,
           venue,
           address,
+          mapUrl,
           startsAt,
           doorsAt,
           description,
@@ -117,6 +119,7 @@ export default async function EditShowPage({
           title: show.title,
           venue: show.venue,
           address: show.address || "",
+          mapUrl: show.mapUrl || "",
           startsAt: toArgDatetimeLocal(show.startsAt),
           doorsAt: show.doorsAt ? toArgDatetimeLocal(show.doorsAt) : "",
           description: show.description || "",

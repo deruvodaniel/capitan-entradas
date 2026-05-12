@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/utils";
 import { generateQrDataUrl } from "@/lib/tickets/qr";
 import { Calendar, MapPin, Ticket } from "lucide-react";
 import Footer from "@/components/Footer";
+import { getMapsUrl } from "@/lib/utils";
 
 export default async function TicketPage({
   params,
@@ -26,6 +27,11 @@ export default async function TicketPage({
   }
 
   const qrDataUrl = await generateQrDataUrl(ticket.qrToken);
+  const mapsUrl = getMapsUrl({
+    mapUrl: ticket.order.show.mapUrl,
+    venue: ticket.order.show.venue,
+    address: ticket.order.show.address,
+  });
 
   return (
     <main className="flex-1 flex flex-col">
@@ -50,15 +56,16 @@ export default async function TicketPage({
                   <Calendar className="w-4 h-4" />
                   {formatDate(ticket.order.show.startsAt)}
                 </p>
-                {ticket.order.show.address ? (
+                {mapsUrl ? (
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ticket.order.show.venue} ${ticket.order.show.address}`)}`}
+                  href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-accent hover:underline"
                 >
                   <MapPin className="w-4 h-4" />
-                  {ticket.order.show.venue} — {ticket.order.show.address}
+                  {ticket.order.show.venue}
+                  {ticket.order.show.address && ` — ${ticket.order.show.address}`}
                 </a>
               ) : (
                 <p className="flex items-center gap-2">

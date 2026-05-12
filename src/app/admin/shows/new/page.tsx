@@ -15,6 +15,7 @@ export default function NewShowPage() {
       .replace(/^-|-$/g, "");
     const venue = formData.get("venue") as string;
     const address = (formData.get("address") as string) || null;
+    const mapUrl = (formData.get("mapUrl") as string) || null;
     const startsAt = parseArgDatetimeLocal(formData.get("startsAt") as string);
     const doorsAtRaw = formData.get("doorsAt") as string;
     const doorsAt = doorsAtRaw ? parseArgDatetimeLocal(doorsAtRaw) : null;
@@ -41,6 +42,7 @@ export default function NewShowPage() {
         slug,
         venue,
         address,
+        mapUrl,
         startsAt,
         doorsAt,
         description,

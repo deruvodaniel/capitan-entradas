@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/utils";
 import { Calendar, MapPin, ArrowLeft, Clock } from "lucide-react";
 import BuyForm from "@/components/BuyForm";
 import Footer from "@/components/Footer";
+import { getMapsUrl } from "@/lib/utils";
 
 export default async function ShowPage({
   params,
@@ -28,6 +29,7 @@ export default async function ShowPage({
   }
 
   const isPast = show.startsAt < new Date();
+  const mapsUrl = getMapsUrl({ mapUrl: show.mapUrl, venue: show.venue, address: show.address });
 
   return (
     <main className="flex-1">
@@ -61,16 +63,17 @@ export default async function ShowPage({
               Puertas: {formatDate(show.doorsAt)}
             </p>
           )}
-          {show.address ? (
+          {mapsUrl ? (
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${show.venue} ${show.address}`)}`}
+              href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 hover:text-accent transition-colors group"
             >
               <MapPin className="w-4 h-4 group-hover:text-accent" />
               <span>
-                {show.venue} — {show.address}
+                {show.venue}
+                {show.address && ` — ${show.address}`}
               </span>
               <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
                 Ver en Maps →
@@ -84,9 +87,9 @@ export default async function ShowPage({
           )}
         </div>
 
-        {show.address && (
+        {mapsUrl && (
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${show.venue} ${show.address}`)}`}
+            href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 inline-flex items-center gap-2 text-xs text-accent border border-accent/30 bg-accent/10 hover:bg-accent/20 rounded-lg px-3 py-1.5 transition-colors"

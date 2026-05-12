@@ -13,6 +13,7 @@ model Show {
   title         String
   venue         String
   address       String?
+  mapUrl        String?
   startsAt      DateTime
   doorsAt       DateTime?
   description   String?

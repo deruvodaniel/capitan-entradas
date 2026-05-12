@@ -3,7 +3,7 @@ import { generateQrToken } from "@/lib/tickets/qr";
 import { generateTicketCode } from "@/lib/tickets/code";
 import { sendTicketEmail } from "@/lib/email/service";
 import { appendSaleToSheet } from "@/lib/sheets/append";
-import { getBaseUrl, formatDate } from "@/lib/utils";
+import { getBaseUrl, formatDate, getMapsUrl } from "@/lib/utils";
 
 interface FulfillResult {
   success: boolean;
@@ -95,6 +95,7 @@ export async function fulfillOrder(
       showDate: formatDate(order.show.startsAt),
       venue: order.show.venue,
       address: order.show.address ?? undefined,
+      mapUrl: getMapsUrl({ mapUrl: order.show.mapUrl, venue: order.show.venue, address: order.show.address }) ?? undefined,
       tierName: order.tier.name,
       quantity: order.quantity,
       ticketUrls,

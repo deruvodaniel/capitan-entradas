@@ -15,6 +15,7 @@ interface ShowFormProps {
     title: string;
     venue: string;
     address: string;
+    mapUrl: string;
     startsAt: string;
     doorsAt: string;
     description: string;
@@ -68,7 +69,7 @@ export default function ShowForm({ action, defaultValues }: ShowFormProps) {
         </div>
         <div>
           <label className="text-sm font-medium text-muted">
-            Dirección (opcional)
+            Dirección <span className="text-muted/60 font-normal">(opcional)</span>
           </label>
           <input
             name="address"
@@ -77,6 +78,22 @@ export default function ShowForm({ action, defaultValues }: ShowFormProps) {
             placeholder="Monte Grande, Buenos Aires"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-muted">
+          Link de Google Maps <span className="text-muted/60 font-normal">(opcional)</span>
+        </label>
+        <input
+          name="mapUrl"
+          type="url"
+          defaultValue={defaultValues?.mapUrl}
+          className="mt-1 w-full px-4 py-3 bg-card border border-card-border rounded-lg focus:outline-none focus:border-accent"
+          placeholder="https://maps.app.goo.gl/..."
+        />
+        <p className="mt-1 text-xs text-muted">
+          Pegá el link de compartir de Google Maps. Si no lo completás, se genera automáticamente desde la dirección.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

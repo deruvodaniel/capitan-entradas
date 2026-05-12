@@ -72,3 +72,17 @@ export function getBaseUrl(): string {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
 }
+
+
+/** Returns the best available Maps URL: explicit mapUrl, or auto-generated from venue+address */
+export function getMapsUrl(opts: {
+  mapUrl?: string | null;
+  venue: string;
+  address?: string | null;
+}): string | null {
+  if (opts.mapUrl) return opts.mapUrl;
+  if (opts.address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${opts.venue} ${opts.address}`)}`;
+  }
+  return null;
+}
