@@ -61,15 +61,43 @@ export default async function ShowPage({
               Puertas: {formatDate(show.doorsAt)}
             </p>
           )}
-          <p className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            {show.venue}
-            {show.address && ` — ${show.address}`}
-          </p>
+          {show.address ? (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${show.venue} ${show.address}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:text-accent transition-colors group"
+            >
+              <MapPin className="w-4 h-4 group-hover:text-accent" />
+              <span>
+                {show.venue} — {show.address}
+              </span>
+              <span className="text-xs text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                Ver en Maps →
+              </span>
+            </a>
+          ) : (
+            <p className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              {show.venue}
+            </p>
+          )}
         </div>
 
+        {show.address && (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${show.venue} ${show.address}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-2 text-xs text-accent border border-accent/30 bg-accent/10 hover:bg-accent/20 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            Ver ubicación en Google Maps
+          </a>
+        )}
+
         {show.description && (
-          <p className="mt-4 text-sm text-muted leading-relaxed">
+          <p className="mt-4 text-sm text-muted leading-relaxed whitespace-pre-line">
             {show.description}
           </p>
         )}

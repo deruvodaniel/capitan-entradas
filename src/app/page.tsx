@@ -87,6 +87,7 @@ export default async function HomePage() {
                     <p className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       {show.venue}
+                      {show.address && ` — ${show.address}`}
                     </p>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
