@@ -72,6 +72,7 @@ interface TicketEmailData {
   showTitle: string;
   showDate: string;
   venue: string;
+  address?: string;
   tierName: string;
   quantity: number;
   ticketUrls: string[];
@@ -94,8 +95,9 @@ export async function sendTicketEmail(data: TicketEmailData): Promise<void> {
       <div style="background:#1a1a1a;border-radius:12px;padding:24px;margin:20px 0;border:1px solid #333">
         <p style="margin:0 0 4px;font-weight:bold;font-size:16px;color:#fff">${data.showTitle}</p>
         <p style="margin:0 0 4px;color:#999;font-size:14px">${data.showDate}</p>
-        <p style="margin:0 0 4px;color:#999;font-size:14px">${data.venue}</p>
-        <p style="margin:0;color:#999;font-size:14px">${data.tierName} x ${data.quantity}</p>
+        <p style="margin:0 0 4px;color:#999;font-size:14px">${data.venue}${data.address ? ` — ${data.address}` : ""}</p>
+        ${data.address ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.venue} ${data.address}`)}" style="display:inline-block;margin:8px 0 4px;color:#e6a817;font-size:13px;text-decoration:none">📍 Cómo llegar →</a><br>` : ""}
+        <p style="margin:4px 0 0;color:#999;font-size:14px">${data.tierName} x ${data.quantity}</p>
       </div>
       <div style="text-align:center;margin:24px 0">
         <p style="margin:0 0 16px;color:#ccc;font-size:14px">Hola <strong>${data.buyerName}</strong>, acá ${data.quantity > 1 ? "están tus entradas" : "está tu entrada"}:</p>

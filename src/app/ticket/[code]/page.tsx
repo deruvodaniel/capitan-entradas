@@ -50,10 +50,22 @@ export default async function TicketPage({
                   <Calendar className="w-4 h-4" />
                   {formatDate(ticket.order.show.startsAt)}
                 </p>
+                {ticket.order.show.address ? (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ticket.order.show.venue} ${ticket.order.show.address}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-accent hover:underline"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {ticket.order.show.venue} — {ticket.order.show.address}
+                </a>
+              ) : (
                 <p className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
                   {ticket.order.show.venue}
                 </p>
+              )}
                 <p className="flex items-center gap-2">
                   <Ticket className="w-4 h-4" />
                   {ticket.order.tier.name}

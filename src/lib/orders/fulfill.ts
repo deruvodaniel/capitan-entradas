@@ -94,6 +94,7 @@ export async function fulfillOrder(
       showTitle: order.show.title,
       showDate: formatDate(order.show.startsAt),
       venue: order.show.venue,
+      address: order.show.address ?? undefined,
       tierName: order.tier.name,
       quantity: order.quantity,
       ticketUrls,
