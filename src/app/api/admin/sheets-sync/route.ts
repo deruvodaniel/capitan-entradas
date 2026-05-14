@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { appendSaleToSheet } from "@/lib/sheets/append";
+import { appendSaleToSheet, getExistingOrderIds } from "@/lib/sheets/append";
 
 /**
  * POST /api/admin/sheets-sync
- * Re-appends all PAID orders to Google Sheets.
- * Useful when Sheets append failed (e.g. trailing newline in env var).
+ * Syncs PAID orders to Google Sheets, skipping orders already present.
  */
 export async function POST() {
   const { userId } = await auth();
@@ -20,9 +19,20 @@ export async function POST() {
     orderBy: { paidAt: "asc" },
   });
 
+  // Read existing order IDs from the sheet to avoid duplicates
+  let existingIds: Set<string>;
+  try {
+    existingIds = await getExistingOrderIds();
+  } catch (e) {
+    console.error("[Sheets Sync] Failed to read existing rows:", e);
+    existingIds = new Set();
+  }
+
+  const newOrders = paidOrders.filter((o) => !existingIds.has(o.id));
+
   const results: { orderId: string; ok: boolean; error?: string }[] = [];
 
-  for (const order of paidOrders) {
+  for (const order of newOrders) {
     try {
       await appendSaleToSheet({
         timestamp: order.paidAt?.toISOString() ?? order.createdAt.toISOString(),
@@ -50,7 +60,8 @@ export async function POST() {
 
   return NextResponse.json({
     total: paidOrders.length,
-    success: results.filter((r) => r.ok).length,
+    alreadyInSheet: existingIds.size,
+    synced: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
     results,
   });

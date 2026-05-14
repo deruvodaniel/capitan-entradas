@@ -7,7 +7,8 @@ export default function SheetsSyncButton() {
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<{
     total: number;
-    success: number;
+    alreadyInSheet: number;
+    synced: number;
     failed: number;
   } | null>(null);
 
@@ -20,10 +21,10 @@ export default function SheetsSyncButton() {
         const data = await res.json();
         setResult(data);
       } else {
-        setResult({ total: 0, success: 0, failed: -1 });
+        setResult({ total: 0, alreadyInSheet: 0, synced: 0, failed: -1 });
       }
     } catch {
-      setResult({ total: 0, success: 0, failed: -1 });
+      setResult({ total: 0, alreadyInSheet: 0, synced: 0, failed: -1 });
     } finally {
       setSyncing(false);
     }
@@ -43,7 +44,9 @@ export default function SheetsSyncButton() {
         <span className="text-xs text-muted">
           {result.failed === -1
             ? "Error al sincronizar"
-            : `${result.success}/${result.total} sincronizadas`}
+            : result.synced > 0
+              ? `${result.synced} nueva${result.synced !== 1 ? "s" : ""} agregada${result.synced !== 1 ? "s" : ""}`
+              : "Todo sincronizado, sin nuevas"}
           {result.failed > 0 && ` (${result.failed} fallaron)`}
         </span>
       )}

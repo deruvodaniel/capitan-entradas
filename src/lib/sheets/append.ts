@@ -28,6 +28,32 @@ interface SaleRow {
   buyerPhone: string;
 }
 
+/**
+ * Read existing order IDs from column B of the "Ventas" sheet.
+ * Used by sync to skip orders that are already present.
+ */
+export async function getExistingOrderIds(): Promise<Set<string>> {
+  const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
+  if (!sheetsId) return new Set();
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetsId,
+    range: "Ventas!B:B", // Column B = orderId
+  });
+
+  const rows = res.data.values || [];
+  const ids = new Set<string>();
+  for (const row of rows) {
+    if (row[0] && row[0] !== "orderId") {
+      ids.add(row[0]);
+    }
+  }
+  return ids;
+}
+
 export async function appendSaleToSheet(row: SaleRow): Promise<void> {
   const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
   if (!sheetsId) {
