@@ -210,9 +210,12 @@ export default function GuestsPage({
     setTimeout(() => setCopiedToken(null), 3000);
   }
 
-  const checkedIn = guests.filter((g) =>
-    g.tickets.some((t) => t.status === "CHECKED_IN")
-  ).length;
+  // Count total tickets (entries), not orders
+  const totalTickets = guests.reduce((s, g) => s + g.quantity, 0);
+  const checkedInTickets = guests.reduce(
+    (s, g) => s + g.tickets.filter((t) => t.status === "CHECKED_IN").length,
+    0
+  );
 
   const pendingInvites = invites.filter((i) => i.status === "PENDING");
   const claimedInvites = invites.filter((i) => i.status === "CLAIMED");
@@ -233,10 +236,10 @@ export default function GuestsPage({
             Lista de Invitados
           </h1>
           <p className="text-xs text-muted mt-0.5">
-            {guests.length > 0 && (
+            {totalTickets > 0 && (
               <>
-                {guests.length} invitado{guests.length !== 1 ? "s" : ""} —{" "}
-                {checkedIn} ingresado{checkedIn !== 1 ? "s" : ""}
+                {totalTickets} entrada{totalTickets !== 1 ? "s" : ""} —{" "}
+                {checkedInTickets} ingresado{checkedInTickets !== 1 ? "s" : ""}
               </>
             )}
             {pendingInvites.length > 0 && (
@@ -553,7 +556,7 @@ export default function GuestsPage({
         <>
           <h2 className="text-sm font-semibold text-muted mb-3 flex items-center gap-2">
             <Users className="w-3.5 h-3.5" />
-            Invitados confirmados ({guests.length})
+            Invitados confirmados ({totalTickets} entrada{totalTickets !== 1 ? "s" : ""})
           </h2>
           <div className="space-y-3">
             {guests.map((guest) => {

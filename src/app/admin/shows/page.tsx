@@ -64,9 +64,9 @@ export default async function AdminShowsPage() {
             const realOrders = show.orders.filter(
               (o) => o.paymentMethod !== "GUEST"
             );
-            const guestOrders = show.orders.filter(
-              (o) => o.paymentMethod === "GUEST"
-            );
+            const guestTickets = show.orders
+              .filter((o) => o.paymentMethod === "GUEST")
+              .reduce((s, o) => s + o.quantity, 0);
 
             // Count tickets sold (quantity, not transactions) — excluding guests
             const ticketsSold = realOrders.reduce(
@@ -184,8 +184,8 @@ export default async function AdminShowsPage() {
                   >
                     <Users className="w-3 h-3" />
                     Invitados
-                    {guestOrders.length > 0 && (
-                      <span className="font-bold">{guestOrders.length}</span>
+                    {guestTickets > 0 && (
+                      <span className="font-bold">{guestTickets}</span>
                     )}
                   </Link>
                 </div>
