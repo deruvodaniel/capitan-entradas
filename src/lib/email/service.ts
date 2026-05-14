@@ -33,7 +33,7 @@ export async function sendAdminTransferNotification(
   );
   if (!adminEmails?.length) return;
 
-  const totalFormatted = `$${(data.totalArs / 100).toLocaleString("es-AR")}`;
+  const totalFormatted = `$${data.totalArs.toLocaleString("es-AR")}`;
 
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#111;color:#fff;border-radius:16px">
