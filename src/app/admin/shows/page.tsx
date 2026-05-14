@@ -51,12 +51,16 @@ export default async function AdminShowsPage() {
       ) : (
         <div className="space-y-4">
           {shows.map((show) => {
-            const totalSold = show.tiers.reduce((s, t) => s + t.soldCount, 0);
-            const totalCapacity = show.tiers.reduce(
+            // Exclude hidden "Invitados" tier from stats and display
+            const visibleTiers = show.tiers.filter(
+              (t) => t.name !== "Invitados"
+            );
+            const totalSold = visibleTiers.reduce((s, t) => s + t.soldCount, 0);
+            const totalCapacity = visibleTiers.reduce(
               (s, t) => s + t.capacity,
               0
             );
-            const totalRevenue = show.tiers.reduce(
+            const totalRevenue = visibleTiers.reduce(
               (s, t) => s + t.soldCount * t.priceArs,
               0
             );
@@ -134,7 +138,7 @@ export default async function AdminShowsPage() {
                 <div className="mt-4">
                   <p className="text-xs text-muted mb-2">Tiers:</p>
                   <div className="flex flex-wrap gap-2">
-                    {show.tiers.map((tier) => (
+                    {visibleTiers.map((tier) => (
                       <span
                         key={tier.id}
                         className="text-xs bg-background border border-card-border px-3 py-1 rounded-full"
