@@ -8,14 +8,14 @@ export default async function AdminShowsPage() {
   const shows = await prisma.show.findMany({
     include: {
       tiers: { orderBy: { sortOrder: "asc" } },
-      _count: {
-        select: {
-          orders: { where: { status: "PAID" } },
-        },
-      },
       orders: {
-        where: { paymentMethod: "GUEST" },
-        select: { id: true },
+        where: { status: "PAID" },
+        select: {
+          id: true,
+          quantity: true,
+          totalArs: true,
+          paymentMethod: true,
+        },
       },
     },
     orderBy: { startsAt: "desc" },
@@ -51,17 +51,31 @@ export default async function AdminShowsPage() {
       ) : (
         <div className="space-y-4">
           {shows.map((show) => {
-            // Exclude hidden "Invitados" tier from stats and display
+            // Exclude hidden "Invitados" tier from display
             const visibleTiers = show.tiers.filter(
               (t) => t.name !== "Invitados"
             );
-            const totalSold = visibleTiers.reduce((s, t) => s + t.soldCount, 0);
             const totalCapacity = visibleTiers.reduce(
               (s, t) => s + t.capacity,
               0
             );
-            const totalRevenue = visibleTiers.reduce(
-              (s, t) => s + t.soldCount * t.priceArs,
+
+            // Real orders = paid + not GUEST
+            const realOrders = show.orders.filter(
+              (o) => o.paymentMethod !== "GUEST"
+            );
+            const guestOrders = show.orders.filter(
+              (o) => o.paymentMethod === "GUEST"
+            );
+
+            // Count tickets sold (quantity, not transactions) — excluding guests
+            const ticketsSold = realOrders.reduce(
+              (s, o) => s + o.quantity,
+              0
+            );
+            // Revenue from real orders only
+            const totalRevenue = realOrders.reduce(
+              (s, o) => s + o.totalArs,
               0
             );
 
@@ -114,9 +128,9 @@ export default async function AdminShowsPage() {
 
                 <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
                   <div className="bg-background rounded-lg p-3">
-                    <p className="text-muted">Vendidas</p>
+                    <p className="text-muted">Entradas vendidas</p>
                     <p className="text-xl font-bold">
-                      {totalSold}
+                      {ticketsSold}
                       <span className="text-sm text-muted font-normal">
                         /{totalCapacity}
                       </span>
@@ -130,7 +144,7 @@ export default async function AdminShowsPage() {
                   </div>
                   <div className="bg-background rounded-lg p-3">
                     <p className="text-muted">Órdenes pagas</p>
-                    <p className="text-xl font-bold">{show._count.orders}</p>
+                    <p className="text-xl font-bold">{realOrders.length}</p>
                   </div>
                 </div>
 
@@ -170,8 +184,8 @@ export default async function AdminShowsPage() {
                   >
                     <Users className="w-3 h-3" />
                     Invitados
-                    {show.orders.length > 0 && (
-                      <span className="font-bold">{show.orders.length}</span>
+                    {guestOrders.length > 0 && (
+                      <span className="font-bold">{guestOrders.length}</span>
                     )}
                   </Link>
                 </div>
