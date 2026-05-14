@@ -38,7 +38,7 @@ export default function BuyForm({ showId, tiers }: BuyFormProps) {
   const packSize = packMatch ? parseInt(packMatch[1]) : 1;
   const isPackTier = packSize >= 2;
   const effectiveQuantity = packSize * quantity;
-  const total = selectedTier ? selectedTier.priceArs * quantity : 0;
+  const total = selectedTier ? selectedTier.priceArs * effectiveQuantity : 0;
 
   // Hint: if there's a promo tier and user is buying 2+ of a non-promo tier
   const promoTier = tiers.find(
