@@ -1,14 +1,22 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate, formatArs } from "@/lib/utils";
-import { Plus, Eye, EyeOff } from "lucide-react";
+import { Plus, Eye, EyeOff, Users } from "lucide-react";
 import { revalidatePath } from "next/cache";
 
 export default async function AdminShowsPage() {
   const shows = await prisma.show.findMany({
     include: {
       tiers: { orderBy: { sortOrder: "asc" } },
-      _count: { select: { orders: { where: { status: "PAID" } } } },
+      _count: {
+        select: {
+          orders: { where: { status: "PAID" } },
+        },
+      },
+      orders: {
+        where: { paymentMethod: "GUEST" },
+        select: { id: true },
+      },
     },
     orderBy: { startsAt: "desc" },
   });
@@ -138,7 +146,7 @@ export default async function AdminShowsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex items-center gap-3">
                   <Link
                     href={`/show/${show.slug}`}
                     target="_blank"
@@ -151,6 +159,16 @@ export default async function AdminShowsPage() {
                     className="text-xs text-muted hover:text-foreground"
                   >
                     Editar
+                  </Link>
+                  <Link
+                    href={`/admin/shows/${show.id}/guests`}
+                    className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    <Users className="w-3 h-3" />
+                    Invitados
+                    {show.orders.length > 0 && (
+                      <span className="font-bold">{show.orders.length}</span>
+                    )}
                   </Link>
                 </div>
               </div>

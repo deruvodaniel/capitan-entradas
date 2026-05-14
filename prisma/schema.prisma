@@ -99,6 +99,7 @@ model WebhookEvent {
 enum PaymentMethod {
   MERCADOPAGO
   TRANSFER
+  GUEST
 }
 
 enum OrderStatus {

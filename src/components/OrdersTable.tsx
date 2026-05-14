@@ -8,7 +8,7 @@ import OrderDrawer from "./OrderDrawer";
 
 type Status = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "REFUNDED";
 
-type PaymentMethod = "MERCADOPAGO" | "TRANSFER";
+type PaymentMethod = "MERCADOPAGO" | "TRANSFER" | "GUEST";
 
 interface Order {
   id: string;
@@ -300,8 +300,11 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                         >
                           {order.status}
                         </span>
-                        <span className="text-[10px] text-muted font-mono">
-                          {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                        <span className={`text-[10px] font-mono font-medium ${
+                          order.paymentMethod === "GUEST" ? "text-emerald-400" :
+                          order.paymentMethod === "TRANSFER" ? "text-yellow-400" : "text-muted"
+                        }`}>
+                          {order.paymentMethod === "GUEST" ? "GUEST" : order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
                         </span>
                       </div>
                     </td>
@@ -360,8 +363,11 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
                         >
                           {order.status}
                         </span>
-                        <span className="text-[10px] text-muted font-mono">
-                          {order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
+                        <span className={`text-[10px] font-mono font-medium ${
+                          order.paymentMethod === "GUEST" ? "text-emerald-400" :
+                          order.paymentMethod === "TRANSFER" ? "text-yellow-400" : "text-muted"
+                        }`}>
+                          {order.paymentMethod === "GUEST" ? "GUEST" : order.paymentMethod === "TRANSFER" ? "TRF" : "MP"}
                         </span>
                       </div>
                     </div>
