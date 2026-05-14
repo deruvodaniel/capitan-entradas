@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           id: tier.id,
           title: `${tier.show.title} - ${tier.name}`,
           quantity: data.quantity,
-          unit_price: unitPrice / 100,
+          unit_price: unitPrice,
           currency_id: "ARS",
         },
       ],

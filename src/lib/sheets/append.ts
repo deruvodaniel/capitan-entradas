@@ -54,7 +54,7 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
           row.showDate,
           row.tier,
           row.quantity,
-          row.totalArs / 100,
+          row.totalArs,
           row.buyerName,
           row.buyerEmail,
           row.buyerDni || "",

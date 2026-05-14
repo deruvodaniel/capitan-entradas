@@ -30,7 +30,7 @@ export default function NewShowPage() {
     const tiers = tierNames
       .map((name, i) => ({
         name,
-        priceArs: Math.round(parseFloat(tierPrices[i]) * 100),
+        priceArs: Math.round(parseFloat(tierPrices[i])),
         capacity: parseInt(tierCapacities[i]),
         sortOrder: i,
       }))

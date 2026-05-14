@@ -42,7 +42,7 @@ export default async function EditShowPage({
     const newTiers = tierNames
       .map((name, i) => ({
         name,
-        priceArs: Math.round(parseFloat(tierPrices[i]) * 100),
+        priceArs: Math.round(parseFloat(tierPrices[i])),
         capacity: parseInt(tierCapacities[i]),
         sortOrder: i,
       }))
@@ -126,7 +126,7 @@ export default async function EditShowPage({
           coverImageUrl: show.coverImageUrl || "",
           tiers: show.tiers.map((t) => ({
             name: t.name,
-            price: String(t.priceArs / 100),
+            price: String(t.priceArs),
             capacity: String(t.capacity),
           })),
         }}

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate amounts match
-    const expectedAmount = order.totalArs / 100;
+    const expectedAmount = order.totalArs;
     if (
       Math.abs(payment.transaction_amount - expectedAmount) > 0.01 ||
       payment.currency_id !== "ARS"
