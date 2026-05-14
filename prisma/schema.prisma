@@ -23,6 +23,29 @@ model Show {
   updatedAt     DateTime  @updatedAt
   tiers         TicketTier[]
   orders        Order[]
+  guestInvites  GuestInvite[]
+}
+
+model GuestInvite {
+  id        String            @id @default(cuid())
+  showId    String
+  show      Show              @relation(fields: [showId], references: [id], onDelete: Cascade)
+  token     String            @unique @default(cuid())
+  quantity  Int               @default(1)
+  label     String?           // "Ganó sorteo IG", "VIP backstage", etc.
+  status    GuestInviteStatus @default(PENDING)
+  orderId   String?           // filled when guest claims the invite
+  claimedAt DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([showId])
+  @@index([token])
+}
+
+enum GuestInviteStatus {
+  PENDING
+  CLAIMED
+  EXPIRED
 }
 
 model TicketTier {
