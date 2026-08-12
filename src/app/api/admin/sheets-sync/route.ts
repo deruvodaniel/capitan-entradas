@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { appendSaleToSheet, getExistingOrderIds } from "@/lib/sheets/append";
+import {
+  appendSaleToSheet,
+  getExistingOrderIds,
+  DEFAULT_SHEET_TAB,
+} from "@/lib/sheets/append";
 
 /**
  * POST /api/admin/sheets-sync
@@ -19,16 +23,30 @@ export async function POST() {
     orderBy: { paidAt: "asc" },
   });
 
-  // Read existing order IDs from the sheet to avoid duplicates
-  let existingIds: Set<string>;
-  try {
-    existingIds = await getExistingOrderIds();
-  } catch (e) {
-    console.error("[Sheets Sync] Failed to read existing rows:", e);
-    existingIds = new Set();
+  // Cada show escribe en su propia pestaña, así que los IDs ya presentes se
+  // leen por pestaña. Los shows sin `sheetTab` son los previos a esa columna
+  // y siguen usando la histórica "Ventas".
+  const tabOf = (o: (typeof paidOrders)[number]) =>
+    o.show.sheetTab ?? DEFAULT_SHEET_TAB;
+
+  const existingByTab = new Map<string, Set<string>>();
+  for (const tab of new Set(paidOrders.map(tabOf))) {
+    try {
+      existingByTab.set(tab, await getExistingOrderIds(tab));
+    } catch (e) {
+      console.error(`[Sheets Sync] Failed to read existing rows on "${tab}":`, e);
+      existingByTab.set(tab, new Set());
+    }
   }
 
-  const newOrders = paidOrders.filter((o) => !existingIds.has(o.id));
+  const alreadyInSheet = [...existingByTab.values()].reduce(
+    (n, s) => n + s.size,
+    0
+  );
+
+  const newOrders = paidOrders.filter(
+    (o) => !existingByTab.get(tabOf(o))?.has(o.id)
+  );
 
   const results: { orderId: string; ok: boolean; error?: string }[] = [];
 
@@ -47,7 +65,7 @@ export async function POST() {
         buyerEmail: order.buyerEmail,
         buyerDni: order.buyerDni || "",
         buyerPhone: order.buyerPhone || "",
-      });
+      }, tabOf(order));
       results.push({ orderId: order.id, ok: true });
     } catch (e) {
       results.push({
@@ -60,7 +78,7 @@ export async function POST() {
 
   return NextResponse.json({
     total: paidOrders.length,
-    alreadyInSheet: existingIds.size,
+    alreadyInSheet,
     synced: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
     results,

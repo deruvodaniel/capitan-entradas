@@ -24,7 +24,7 @@ export default async function ShowPage({
     },
   });
 
-  if (!show || !show.isPublished) {
+  if (!show || !show.isPublished || show.archivedAt) {
     notFound();
   }
 

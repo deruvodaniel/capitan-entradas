@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import ShowForm from "@/components/ShowForm";
 import { parseArgDatetimeLocal } from "@/lib/utils";
+import { ensureShowSheet } from "@/lib/sheets/append";
 
 export default function NewShowPage() {
   async function createShow(formData: FormData) {
@@ -36,10 +37,20 @@ export default function NewShowPage() {
       }))
       .filter((t) => t.name && t.priceArs > 0 && t.capacity > 0);
 
+    // Pestaña propia en el Sheet. Si falla (credencial ausente, API caída) el
+    // show igual se crea: queda con sheetTab null y escribe en "Ventas".
+    let sheetTab: string | null = null;
+    try {
+      sheetTab = await ensureShowSheet(title);
+    } catch (e) {
+      console.error("[Sheets] No se pudo crear la pestaña del show:", e);
+    }
+
     const show = await prisma.show.create({
       data: {
         title,
         slug,
+        sheetTab,
         venue,
         address,
         mapUrl,

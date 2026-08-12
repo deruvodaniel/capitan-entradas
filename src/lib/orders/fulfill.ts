@@ -120,7 +120,7 @@ export async function fulfillOrder(
       buyerEmail: order.buyerEmail,
       buyerDni: order.buyerDni || "",
       buyerPhone: order.buyerPhone || "",
-    });
+    }, order.show.sheetTab ?? undefined);
     console.log("Sheet row appended for order", order.id);
   } catch (e) {
     console.error("Sheets append failed:", e);

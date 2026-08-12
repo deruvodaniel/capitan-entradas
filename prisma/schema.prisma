@@ -19,6 +19,10 @@ model Show {
   description   String?
   coverImageUrl String?
   isPublished   Boolean   @default(false)
+  /// Soft delete: se conservan órdenes y tickets del histórico contable.
+  archivedAt    DateTime?
+  /// Pestaña propia en el Google Sheet. Null = shows viejos, van a "Ventas".
+  sheetTab      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   tiers         TicketTier[]

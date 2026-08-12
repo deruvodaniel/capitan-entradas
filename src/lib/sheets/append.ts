@@ -28,11 +28,93 @@ interface SaleRow {
   buyerPhone: string;
 }
 
+/** Pestaña histórica, usada por los shows anteriores a `sheetTab`. */
+export const DEFAULT_SHEET_TAB = "Ventas";
+
+const HEADERS = [
+  "timestamp",
+  "orderId",
+  "paymentId",
+  "showTitle",
+  "showDate",
+  "tier",
+  "quantity",
+  "totalArs",
+  "buyerName",
+  "buyerEmail",
+  "buyerDni",
+  "buyerPhone",
+];
+
 /**
- * Read existing order IDs from column B of the "Ventas" sheet.
+ * Los nombres de pestaña de Google Sheets no admiten : \ / ? * [ ] y tienen
+ * un máximo de 100 caracteres.
+ */
+export function toSheetTabName(title: string): string {
+  return (
+    title
+      .replace(/[:\\/?*[\]]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 100) || "Show"
+  );
+}
+
+/**
+ * Crea la pestaña del show si no existe y le escribe los headers.
+ * Devuelve el nombre final, que puede diferir del pedido si ya estaba tomado.
+ * Idempotente: si la pestaña ya existe se reutiliza tal cual.
+ */
+export async function ensureShowSheet(title: string): Promise<string | null> {
+  const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
+  if (!sheetsId) {
+    console.warn("GOOGLE_SHEETS_ID not set, skipping sheet creation");
+    return null;
+  }
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetsId });
+  const existing = new Set(
+    (meta.data.sheets || []).map((s) => s.properties?.title).filter(Boolean)
+  );
+
+  const base = toSheetTabName(title);
+  if (existing.has(base)) return base;
+
+  // Desambigua si el título choca con otra pestaña: "Titulo (2)", "(3)"...
+  let name = base;
+  for (let i = 2; existing.has(name); i++) {
+    const suffix = ` (${i})`;
+    name = base.slice(0, 100 - suffix.length) + suffix;
+  }
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetsId,
+    requestBody: {
+      requests: [{ addSheet: { properties: { title: name } } }],
+    },
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetsId,
+    range: `${name}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: [HEADERS] },
+  });
+
+  console.log("[Sheets] Pestaña creada:", name);
+  return name;
+}
+
+/**
+ * Read existing order IDs from column B of a sheet tab.
  * Used by sync to skip orders that are already present.
  */
-export async function getExistingOrderIds(): Promise<Set<string>> {
+export async function getExistingOrderIds(
+  tab: string = DEFAULT_SHEET_TAB
+): Promise<Set<string>> {
   const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
   if (!sheetsId) return new Set();
 
@@ -41,7 +123,7 @@ export async function getExistingOrderIds(): Promise<Set<string>> {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetsId,
-    range: "Ventas!B:B", // Column B = orderId
+    range: `${tab}!B:B`, // Column B = orderId
   });
 
   const rows = res.data.values || [];
@@ -54,7 +136,10 @@ export async function getExistingOrderIds(): Promise<Set<string>> {
   return ids;
 }
 
-export async function appendSaleToSheet(row: SaleRow): Promise<void> {
+export async function appendSaleToSheet(
+  row: SaleRow,
+  tab: string = DEFAULT_SHEET_TAB
+): Promise<void> {
   const sheetsId = process.env.GOOGLE_SHEETS_ID?.trim();
   if (!sheetsId) {
     console.warn("GOOGLE_SHEETS_ID not set, skipping sheets append");
@@ -68,7 +153,7 @@ export async function appendSaleToSheet(row: SaleRow): Promise<void> {
 
   const res = await sheets.spreadsheets.values.append({
     spreadsheetId: sheetsId,
-    range: "Ventas!A:L",
+    range: `${tab}!A:L`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [

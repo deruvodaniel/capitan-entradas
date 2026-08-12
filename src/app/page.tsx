@@ -10,7 +10,11 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const shows = await prisma.show.findMany({
-    where: { isPublished: true, startsAt: { gte: new Date() } },
+    where: {
+      isPublished: true,
+      archivedAt: null,
+      startsAt: { gte: new Date() },
+    },
     include: {
       tiers: {
         where: { isActive: true },

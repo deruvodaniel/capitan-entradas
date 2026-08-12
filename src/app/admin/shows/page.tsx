@@ -1,11 +1,20 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { formatDate, formatArs } from "@/lib/utils";
-import { Plus, Eye, EyeOff, Users } from "lucide-react";
+import { Plus, Eye, EyeOff, Users, Trash2, ArchiveRestore } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import ConfirmSubmitButton from "@/components/ConfirmSubmitButton";
 
-export default async function AdminShowsPage() {
+export default async function AdminShowsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ archivados?: string }>;
+}) {
+  const { archivados } = await searchParams;
+  const showArchived = archivados === "1";
+
   const shows = await prisma.show.findMany({
+    where: showArchived ? { archivedAt: { not: null } } : { archivedAt: null },
     include: {
       tiers: { orderBy: { sortOrder: "asc" } },
       orders: {
@@ -35,21 +44,61 @@ export default async function AdminShowsPage() {
     revalidatePath(`/show/${show.slug}`);
   }
 
+  async function archiveShow(formData: FormData) {
+    "use server";
+    const showId = formData.get("showId") as string;
+    // Soft delete: se despublica y se archiva, pero se conservan órdenes y
+    // tickets para el histórico contable.
+    const show = await prisma.show.update({
+      where: { id: showId },
+      data: { archivedAt: new Date(), isPublished: false },
+    });
+    revalidatePath("/admin/shows");
+    revalidatePath("/");
+    revalidatePath(`/show/${show.slug}`);
+  }
+
+  async function restoreShow(formData: FormData) {
+    "use server";
+    const showId = formData.get("showId") as string;
+    const show = await prisma.show.update({
+      where: { id: showId },
+      data: { archivedAt: null },
+    });
+    revalidatePath("/admin/shows");
+    revalidatePath("/");
+    revalidatePath(`/show/${show.slug}`);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Shows</h1>
-        <Link
-          href="/admin/shows/new"
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover"
-        >
-          <Plus className="w-4 h-4" /> Nuevo show
-        </Link>
+        <h1 className="text-2xl font-bold">
+          {showArchived ? "Shows archivados" : "Shows"}
+        </h1>
+        <div className="flex items-center gap-3">
+          <Link
+            href={showArchived ? "/admin/shows" : "/admin/shows?archivados=1"}
+            className="text-sm text-muted hover:text-foreground"
+          >
+            {showArchived ? "← Volver a activos" : "Ver archivados"}
+          </Link>
+          {!showArchived && (
+            <Link
+              href="/admin/shows/new"
+              className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover"
+            >
+              <Plus className="w-4 h-4" /> Nuevo show
+            </Link>
+          )}
+        </div>
       </div>
 
       {shows.length === 0 ? (
         <p className="text-muted text-center py-12">
-          No hay shows creados. Creá el primero.
+          {showArchived
+            ? "No hay shows archivados."
+            : "No hay shows creados. Creá el primero."}
         </p>
       ) : (
         <div className="space-y-4">
@@ -105,28 +154,57 @@ export default async function AdminShowsPage() {
                       {formatDate(show.startsAt)} — {show.venue}
                     </p>
                   </div>
-                  <form action={togglePublish}>
-                    <input type="hidden" name="showId" value={show.id} />
-                    <input
-                      type="hidden"
-                      name="isPublished"
-                      value={String(show.isPublished)}
-                    />
-                    <button
-                      type="submit"
-                      className="flex items-center gap-1 text-sm text-muted hover:text-foreground border border-card-border px-3 py-1.5 rounded-lg"
-                    >
-                      {show.isPublished ? (
-                        <>
-                          <EyeOff className="w-3.5 h-3.5" /> Ocultar
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-3.5 h-3.5" /> Publicar
-                        </>
-                      )}
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-2">
+                    {showArchived ? (
+                      <form action={restoreShow}>
+                        <input type="hidden" name="showId" value={show.id} />
+                        <button
+                          type="submit"
+                          className="flex items-center gap-1 text-sm text-muted hover:text-foreground border border-card-border px-3 py-1.5 rounded-lg"
+                        >
+                          <ArchiveRestore className="w-3.5 h-3.5" /> Restaurar
+                        </button>
+                      </form>
+                    ) : (
+                      <>
+                        <form action={togglePublish}>
+                          <input type="hidden" name="showId" value={show.id} />
+                          <input
+                            type="hidden"
+                            name="isPublished"
+                            value={String(show.isPublished)}
+                          />
+                          <button
+                            type="submit"
+                            className="flex items-center gap-1 text-sm text-muted hover:text-foreground border border-card-border px-3 py-1.5 rounded-lg"
+                          >
+                            {show.isPublished ? (
+                              <>
+                                <EyeOff className="w-3.5 h-3.5" /> Ocultar
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3.5 h-3.5" /> Publicar
+                              </>
+                            )}
+                          </button>
+                        </form>
+                        <form action={archiveShow}>
+                          <input type="hidden" name="showId" value={show.id} />
+                          <ConfirmSubmitButton
+                            className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 border border-card-border px-3 py-1.5 rounded-lg"
+                            message={
+                              ticketsSold > 0
+                                ? `"${show.title}" tiene ${ticketsSold} entrada(s) vendida(s). Se va a archivar y despublicar, pero las órdenes y tickets se conservan. ¿Continuar?`
+                                : `¿Archivar "${show.title}"?`
+                            }
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                          </ConfirmSubmitButton>
+                        </form>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
