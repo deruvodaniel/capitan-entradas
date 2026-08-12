@@ -36,7 +36,7 @@ export default function NewShowPage() {
       }))
       .filter((t) => t.name && t.priceArs > 0 && t.capacity > 0);
 
-    await prisma.show.create({
+    const show = await prisma.show.create({
       data: {
         title,
         slug,
@@ -52,6 +52,9 @@ export default function NewShowPage() {
     });
 
     revalidatePath("/admin/shows");
+    // La home lista los shows publicados: sin esto sigue sirviendo la versión cacheada.
+    revalidatePath("/");
+    revalidatePath(`/show/${show.slug}`);
     redirect("/admin/shows");
   }
 

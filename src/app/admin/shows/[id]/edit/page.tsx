@@ -18,6 +18,9 @@ export default async function EditShowPage({
 
   if (!show) notFound();
 
+  // El slug se deriva del título, así que al editar puede cambiar.
+  const previousSlug = show.slug;
+
   async function updateShow(formData: FormData) {
     "use server";
 
@@ -107,6 +110,10 @@ export default async function EditShowPage({
     });
 
     revalidatePath("/admin/shows");
+    // La home lista los shows publicados: sin esto sigue sirviendo la versión cacheada.
+    revalidatePath("/");
+    revalidatePath(`/show/${slug}`);
+    if (previousSlug !== slug) revalidatePath(`/show/${previousSlug}`);
     redirect("/admin/shows");
   }
 

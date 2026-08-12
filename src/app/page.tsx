@@ -4,6 +4,10 @@ import { formatArs, formatDate } from "@/lib/utils";
 import { Calendar, MapPin, Music } from "lucide-react";
 import Footer from "@/components/Footer";
 
+// La home filtra por `startsAt >= new Date()`. Sin esto Next la prerenderiza en el
+// build y congela tanto la lista de shows como el "ahora" de ese filtro.
+export const revalidate = 60;
+
 export default async function HomePage() {
   const shows = await prisma.show.findMany({
     where: { isPublished: true, startsAt: { gte: new Date() } },

@@ -25,11 +25,14 @@ export default async function AdminShowsPage() {
     "use server";
     const showId = formData.get("showId") as string;
     const current = formData.get("isPublished") === "true";
-    await prisma.show.update({
+    const show = await prisma.show.update({
       where: { id: showId },
       data: { isPublished: !current },
     });
     revalidatePath("/admin/shows");
+    // La home lista los shows publicados: sin esto sigue sirviendo la versión cacheada.
+    revalidatePath("/");
+    revalidatePath(`/show/${show.slug}`);
   }
 
   return (
