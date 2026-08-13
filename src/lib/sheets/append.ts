@@ -31,19 +31,20 @@ interface SaleRow {
 /** Pestaña histórica, usada por los shows anteriores a `sheetTab`. */
 export const DEFAULT_SHEET_TAB = "Ventas";
 
+/** Mismos encabezados que la pestaña histórica "Ventas". */
 const HEADERS = [
-  "timestamp",
-  "orderId",
-  "paymentId",
-  "showTitle",
-  "showDate",
-  "tier",
-  "quantity",
-  "totalArs",
-  "buyerName",
-  "buyerEmail",
-  "buyerDni",
-  "buyerPhone",
+  "Timestamp",
+  "Order ID",
+  "Payment ID",
+  "Show",
+  "Fecha Show",
+  "Tier",
+  "Cantidad",
+  "Total ($)",
+  "Nombre",
+  "Email",
+  "DNI",
+  "Telefono",
 ];
 
 /**
@@ -128,9 +129,13 @@ export async function getExistingOrderIds(
 
   const rows = res.data.values || [];
   const ids = new Set<string>();
+  // La pestaña histórica rotula la columna "Order ID" y las nuevas usan el
+  // mismo encabezado; se descartan ambas variantes por las dudas.
+  const headerLabels = new Set(["orderid", "order id"]);
   for (const row of rows) {
-    if (row[0] && row[0] !== "orderId") {
-      ids.add(row[0]);
+    const value = row[0]?.trim();
+    if (value && !headerLabels.has(value.toLowerCase())) {
+      ids.add(value);
     }
   }
   return ids;
