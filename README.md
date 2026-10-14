@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CAPITAN Tickets
 
-## Getting Started
+A full-stack ticketing platform for CAPITAN shows. Visitors can discover upcoming dates, buy or claim tickets and receive a QR credential; administrators manage shows, orders, guests, payments and venue check-in.
 
-First, run the development server:
+[Live site](https://capitan-tickets.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Product capabilities
+
+- Public catalogue for published shows and ticket tiers.
+- Mercado Pago checkout plus bank-transfer confirmation flow.
+- QR ticket generation and venue-side scanning.
+- Invite links with claim flows for guest tickets.
+- Admin views for shows, orders, guests and ticket status.
+- Clerk authentication with an email-based admin allowlist.
+- PostgreSQL persistence through Prisma.
+- Google Sheets synchronization and email notifications.
+
+## Stack
+
+Next.js 16 · React 19 · TypeScript · Tailwind CSS · Prisma · PostgreSQL · Clerk · Mercado Pago · Google APIs
+
+## Main flows
+
+```mermaid
+flowchart LR
+  A[Published show] --> B[Ticket selection]
+  B --> C{Payment method}
+  C --> D[Mercado Pago]
+  C --> E[Bank transfer]
+  D --> F[Order confirmation]
+  E --> F
+  F --> G[Signed QR ticket]
+  G --> H[Venue scanner]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application also supports invitation claims, archived shows, guest lists, payment evidence and administrative order updates.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npx prisma generate
+npm run dev
+```
 
-## Learn More
+The application requires a PostgreSQL database and environment values for Clerk, payment processing, signed tickets, email and optional Google Sheets synchronization. Keep service credentials and signing secrets outside source control.
 
-To learn more about Next.js, take a look at the following resources:
+## Useful commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:migrate
+npm run db:seed
+npm run lint
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Repository map
 
-## Deploy on Vercel
+```text
+src/app/              Public, payment, ticket, scanner and admin routes
+src/app/api/          Checkout, webhook, ticket and admin endpoints
+src/components/       Purchase, order, scanner and administration UI
+src/lib/              Database, auth, payments, email, sheets and QR logic
+prisma/               Schema, migrations and development seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is actively developed for a real band workflow. Operational configuration, payment credentials and customer data are intentionally kept outside the repository.
