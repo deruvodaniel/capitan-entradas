@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { generateQrToken } from "@/lib/tickets/qr";
 import { generateTicketCode } from "@/lib/tickets/code";
-import { sendTicketEmail } from "@/lib/email/service";
+import { sendAdminSaleNotification, sendTicketEmail } from "@/lib/email/service";
 import { appendSaleToSheet } from "@/lib/sheets/append";
 import { getBaseUrl, formatDate, getMapsUrl } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ interface FulfillOptions {
 
 /**
  * Fulfills an order: checks capacity, generates tickets, updates order to PAID,
- * sends email with ticket links, and appends sale to Google Sheets.
+ * sends ticket and admin sale emails, and appends the sale to Google Sheets.
  *
  * Reusable from both the MP webhook (automatic) and admin confirmation (manual).
  * Idempotent: if the order is already PAID, returns success without doing anything.
@@ -103,6 +103,28 @@ export async function fulfillOrder(
     console.log("Email sent to", order.buyerEmail);
   } catch (e) {
     console.error("Email send failed:", e);
+  }
+
+  // Notify admins only after a Mercado Pago order has been fulfilled.
+  // The PAID guard above also prevents repeated notifications on later calls.
+  if (order.paymentMethod === "MERCADOPAGO") {
+    try {
+      await sendAdminSaleNotification({
+        orderId: order.id,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        buyerPhone: order.buyerPhone ?? undefined,
+        showTitle: order.show.title,
+        tierName: order.tier.name,
+        quantity: order.quantity,
+        totalArs: order.totalArs,
+        paymentId: opts.mpPaymentId ?? order.mpPaymentId ?? undefined,
+        adminUrl: `${baseUrl}/admin/orders`,
+      });
+      console.log("Admin sale notification sent for order", order.id);
+    } catch (e) {
+      console.error("Admin sale notification failed for order", order.id, e);
+    }
   }
 
   // Append to Google Sheets

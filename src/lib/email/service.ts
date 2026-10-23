@@ -13,7 +13,7 @@ function logoUrl() {
   return `${getBaseUrl()}/logo.png`;
 }
 
-interface AdminTransferNotification {
+interface AdminOrderNotification {
   orderId: string;
   buyerName: string;
   buyerEmail: string;
@@ -26,7 +26,7 @@ interface AdminTransferNotification {
 }
 
 export async function sendAdminTransferNotification(
-  data: AdminTransferNotification
+  data: AdminOrderNotification
 ): Promise<void> {
   const adminEmails = process.env.ADMIN_EMAILS?.split(",").map((e) =>
     e.trim()
@@ -62,6 +62,71 @@ export async function sendAdminTransferNotification(
     from: `"CAPITAN Tickets" <${process.env.GMAIL_USER}>`,
     to: adminEmails.join(","),
     subject: `Transferencia pendiente: ${data.buyerName} — ${totalFormatted}`,
+    html,
+  });
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
+}
+
+interface AdminSaleNotification extends AdminOrderNotification {
+  paymentId?: string;
+}
+
+export async function sendAdminSaleNotification(
+  data: AdminSaleNotification
+): Promise<void> {
+  const adminEmails = [
+    ...new Set(
+      (process.env.ADMIN_EMAILS ?? "")
+        .split(",")
+        .map((email) => email.trim())
+        .filter(Boolean)
+    ),
+  ];
+  if (!adminEmails.length) return;
+
+  const totalFormatted = `$${data.totalArs.toLocaleString("es-AR")}`;
+  const html = `
+    <div style="font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#111;color:#fff;border-radius:16px">
+      <div style="text-align:center;padding:16px 0">
+        <img src="${escapeHtml(logoUrl())}" alt="CAPITAN" style="max-width:180px;height:auto;margin-bottom:8px" />
+        <p style="color:#e6a817;margin:8px 0 0;font-weight:bold;font-size:14px">Nueva venta confirmada</p>
+        <p style="color:#999;margin:8px 0 0;font-size:13px">Pago aprobado por Mercado Pago</p>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0;border:1px solid #333">
+        <p style="margin:0 0 8px;color:#fff"><strong>${escapeHtml(data.buyerName)}</strong></p>
+        <p style="margin:0 0 4px;color:#999;font-size:14px">${escapeHtml(data.buyerEmail)}${data.buyerPhone ? ` | ${escapeHtml(data.buyerPhone)}` : ""}</p>
+        <hr style="border:none;border-top:1px solid #333;margin:12px 0" />
+        <p style="margin:0 0 4px;color:#999;font-size:14px">${escapeHtml(data.showTitle)}</p>
+        <p style="margin:0 0 4px;color:#999;font-size:14px">${escapeHtml(data.tierName)} x ${data.quantity}</p>
+        <p style="margin:12px 0 0;font-size:28px;font-weight:bold;color:#e6a817">${totalFormatted}</p>
+        <p style="margin:12px 0 4px;color:#999;font-size:12px">Orden: ${escapeHtml(data.orderId)}</p>
+        ${data.paymentId ? `<p style="margin:0;color:#999;font-size:12px">Pago: ${escapeHtml(data.paymentId)}</p>` : ""}
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${escapeHtml(data.adminUrl)}" style="background:#16a34a;color:#fff;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px">Ver venta</a>
+      </div>
+      <div style="text-align:center;color:#666;font-size:11px;margin-top:24px">
+        <p>El pago ya fue confirmado y las entradas fueron generadas.</p>
+      </div>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"CAPITAN Tickets" <${process.env.GMAIL_USER}>`,
+    to: adminEmails.join(","),
+    subject: `Venta confirmada: ${data.buyerName} — ${totalFormatted}`,
     html,
   });
 }
